@@ -56,7 +56,7 @@ function EmpresaRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (profile?.user_type === "empresa" && company?.status_onboarding === "pendente") {
+  if (profile?.user_type === "empresa" && (!company || company.status_onboarding === "pendente")) {
     return <Navigate to="/onboarding" replace />;
   }
 
