@@ -56,7 +56,7 @@ function EmpresaRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (profile?.user_type === "empresa" && company?.status_onboarding === "pendente") {
+  if (profile?.user_type === "empresa" && (!company || company.status_onboarding === "pendente")) {
     return <Navigate to="/onboarding" replace />;
   }
 
@@ -93,7 +93,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<AuthRedirect><Index /></AuthRedirect>} />
-      <Route path="/signup" element={<AuthRedirect><Signup /></AuthRedirect>} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/login" element={<AuthRedirect><Login /></AuthRedirect>} />
       <Route path="/verify-email" element={<VerifyEmail />} />
 

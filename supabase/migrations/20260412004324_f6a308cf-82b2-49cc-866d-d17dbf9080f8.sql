@@ -1,0 +1,1 @@
+DELETE FROM auth.users WHERE email = 'teste-empresa-123@teste.com';
