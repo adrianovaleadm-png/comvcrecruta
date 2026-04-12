@@ -127,7 +127,12 @@ export default function Signup() {
 
       navigate("/verify-email");
     } catch (err: any) {
-      setError(err.message || "Erro ao criar conta.");
+      const detail = err?.message || JSON.stringify(err);
+      const code = err?.code ? ` [code: ${err.code}]` : "";
+      const hint = err?.hint ? ` Hint: ${err.hint}` : "";
+      const details = err?.details ? ` Details: ${err.details}` : "";
+      setError(`${detail}${code}${hint}${details}`);
+      console.error("Signup error:", err);
     } finally {
       setLoading(false);
     }
