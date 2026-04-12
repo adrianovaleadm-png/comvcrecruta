@@ -14,16 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          cnpj: string
+          created_at: string
+          descricao: string | null
+          endereco: string | null
+          id: string
+          logo_url: string | null
+          nome_fantasia: string
+          razao_social: string
+          setor: string | null
+          status_onboarding: string
+          tamanho: string | null
+          telefone_comercial: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome_fantasia: string
+          razao_social: string
+          setor?: string | null
+          status_onboarding?: string
+          tamanho?: string | null
+          telefone_comercial?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome_fantasia?: string
+          razao_social?: string
+          setor?: string | null
+          status_onboarding?: string
+          tamanho?: string | null
+          telefone_comercial?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_members: {
+        Row: {
+          cargo: string | null
+          company_id: string
+          created_at: string
+          id: string
+          role_empresa: Database["public"]["Enums"]["role_empresa"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cargo?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          role_empresa?: Database["public"]["Enums"]["role_empresa"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cargo?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          role_empresa?: Database["public"]["Enums"]["role_empresa"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+          user_type: Database["public"]["Enums"]["user_type"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_type?: Database["public"]["Enums"]["user_type"]
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_company_admin: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      role_empresa: "admin" | "membro"
+      user_type: "candidato" | "empresa" | "recrutador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +283,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      role_empresa: ["admin", "membro"],
+      user_type: ["candidato", "empresa", "recrutador"],
+    },
   },
 } as const
