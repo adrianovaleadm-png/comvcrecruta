@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Briefcase, MessageSquare, Building2,
-  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, ChevronDown
+  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X
 } from "lucide-react";
 import { useState } from "react";
 
@@ -58,7 +57,6 @@ const sections: NavSection[] = [
 export default function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { company, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path: string) =>
@@ -69,16 +67,12 @@ export default function AppSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          {company?.logo_url ? (
-            <img src={company.logo_url} alt="Logo" className="w-8 h-8 rounded-md object-cover" />
-          ) : (
-            <div className="w-8 h-8 rounded-md bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
-              {company?.nome_fantasia?.charAt(0) || "R"}
-            </div>
-          )}
+          <div className="w-8 h-8 rounded-md bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
+            R
+          </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">{company?.nome_fantasia || "Recrutamento Inteligente"}</p>
-            <p className="text-[11px] text-sidebar-muted truncate">{profile?.full_name}</p>
+            <p className="text-sm font-semibold truncate">Recrutamento Inteligente</p>
+            <p className="text-[11px] text-sidebar-muted truncate">Modo desenvolvimento</p>
           </div>
         </div>
       </div>
@@ -112,11 +106,11 @@ export default function AppSidebar() {
       {/* Footer */}
       <div className="p-3 border-t border-sidebar-border">
         <button
-          onClick={signOut}
+          onClick={() => navigate("/login")}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          <span>Sair</span>
+          <span>Login</span>
         </button>
       </div>
     </div>
@@ -124,7 +118,6 @@ export default function AppSidebar() {
 
   return (
     <>
-      {/* Mobile trigger */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed top-3 left-3 z-50 md:hidden w-10 h-10 rounded-md bg-card border border-border flex items-center justify-center"
@@ -132,17 +125,14 @@ export default function AppSidebar() {
         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-foreground/20 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Mobile sidebar */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
         {sidebar}
       </div>
 
-      {/* Desktop sidebar */}
       <div className="hidden md:block w-60 flex-shrink-0 h-screen sticky top-0">
         {sidebar}
       </div>
