@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useRef, useCallback } from "react";
 
 interface JobFormValues {
   title: string;
@@ -21,6 +22,8 @@ interface JobFormValues {
 
 export default function JobCreate() {
   const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const lastCallRef = useRef(0);
 
   const form = useForm<JobFormValues>({
     defaultValues: {
@@ -56,6 +59,47 @@ export default function JobCreate() {
       toast.error(`Erro ao criar vaga: ${error.message}`);
     },
   });
+
+  const generateDescription = useCallback(async (improve: boolean) => {
+    const now = Date.now();
+    if (now - lastCallRef.current < 3000) {
+      toast.info("Aguarde alguns segundos antes de tentar novamente.");
+      return;
+    }
+    lastCallRef.current = now;
+
+    const title = form.getValues("title");
+    if (!title.trim()) {
+      toast.error("Preencha o título da vaga antes de gerar a descrição.");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-job-description", {
+        body: {
+          title,
+          location: form.getValues("location"),
+          type: form.getValues("type"),
+          status: form.getValues("status"),
+          existingDescription: improve ? form.getValues("description") : undefined,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      form.setValue("description", data.description, { shouldDirty: true });
+      toast.success(improve ? "Descrição melhorada!" : "Descrição gerada!");
+    } catch (e: any) {
+      console.error("AI generation error:", e);
+      toast.error(e?.message || "Erro ao gerar descrição. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [form]);
+
+  const descriptionValue = form.watch("description");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -93,9 +137,41 @@ export default function JobCreate() {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Descrição</FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Descrição</FormLabel>
+                  <div className="flex gap-2">
+                    {descriptionValue?.trim() && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={isGenerating}
+                        onClick={() => generateDescription(true)}
+                        className="h-7 gap-1 text-xs"
+                      >
+                        <RefreshCw className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} />
+                        {isGenerating ? "Melhorando…" : "Melhorar texto"}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isGenerating}
+                      onClick={() => generateDescription(false)}
+                      className="h-7 gap-1 text-xs"
+                    >
+                      <Sparkles className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} />
+                      {isGenerating ? "Gerando…" : "Gerar com IA"}
+                    </Button>
+                  </div>
+                </div>
                 <FormControl>
-                  <Textarea placeholder="Descreva a vaga, requisitos, responsabilidades..." rows={5} {...field} />
+                  <Textarea
+                    placeholder="Descreva a vaga, requisitos, responsabilidades..."
+                    rows={10}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -166,7 +242,7 @@ export default function JobCreate() {
           />
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={createJob.isPending}>
+            <Button type="submit" disabled={createJob.isPending || isGenerating}>
               {createJob.isPending ? "Criando..." : "Criar Vaga"}
             </Button>
             <Button type="button" variant="outline" asChild>
