@@ -13,6 +13,9 @@ import CandidatoPlaceholder from "./pages/CandidatoPlaceholder";
 import AppLayout from "./pages/AppLayout";
 import Painel from "./pages/app/Painel";
 import PlaceholderPage from "./pages/app/PlaceholderPage";
+import JobsList from "./pages/app/JobsList";
+import JobCreate from "./pages/app/JobCreate";
+import JobDetail from "./pages/app/JobDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +32,9 @@ function AppRoutes() {
 
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<Painel />} />
-        <Route path="vagas" element={<PlaceholderPage title="Hub de Vagas" description="Gerencie todas as vagas da empresa." />} />
+        <Route path="vagas" element={<JobsList />} />
+        <Route path="vagas/nova" element={<JobCreate />} />
+        <Route path="vagas/:id" element={<JobDetail />} />
         <Route path="mensagens" element={<PlaceholderPage title="Mensagens" description="Comunique-se com candidatos e equipe." />} />
         <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
         <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
