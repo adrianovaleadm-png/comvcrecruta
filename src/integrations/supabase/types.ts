@@ -110,6 +110,39 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          status: string
+          title: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          status?: string
+          title: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          status?: string
+          title?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -139,6 +172,35 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"]
         }
         Relationships: []
+      }
+      stages: {
+        Row: {
+          id: string
+          job_id: string
+          name: string
+          order_index: number
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          name: string
+          order_index: number
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          name?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stages_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
