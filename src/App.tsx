@@ -13,6 +13,9 @@ import CandidatoPlaceholder from "./pages/CandidatoPlaceholder";
 import AppLayout from "./pages/AppLayout";
 import Painel from "./pages/app/Painel";
 import PlaceholderPage from "./pages/app/PlaceholderPage";
+import JobsList from "./pages/app/JobsList";
+import JobCreate from "./pages/app/JobCreate";
+import JobDetail from "./pages/app/JobDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
