@@ -17,6 +17,8 @@ import JobsList from "./pages/app/JobsList";
 import JobCreate from "./pages/app/JobCreate";
 import JobDetail from "./pages/app/JobDetail";
 import Pipeline from "./pages/app/Pipeline";
+import TalentList from "./pages/app/TalentList";
+import TalentProfile from "./pages/app/TalentProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +39,8 @@ function AppRoutes() {
         <Route path="vagas/nova" element={<JobCreate />} />
         <Route path="vagas/:id" element={<JobDetail />} />
         <Route path="vagas/:id/pipeline" element={<Pipeline />} />
+        <Route path="talentos" element={<TalentList />} />
+        <Route path="talentos/:id" element={<TalentProfile />} />
         <Route path="mensagens" element={<PlaceholderPage title="Mensagens" description="Comunique-se com candidatos e equipe." />} />
         <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
         <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
