@@ -155,6 +155,50 @@ export default function JobDetail() {
           ))}
         </div>
       </div>
+      {/* Score Weights */}
+      {(job as any).score_weights && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <SlidersHorizontal className="h-4 w-4 text-primary" /> Pesos do Fit Score
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {Object.entries((job as any).score_weights as Record<string, number>).map(([key, val]) => {
+              const total = Object.values((job as any).score_weights as Record<string, number>).reduce((s: number, v: number) => s + v, 0);
+              const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+              return (
+                <div key={key} className="rounded-lg border border-border px-3 py-2 text-center">
+                  <p className="text-xs text-muted-foreground">{WEIGHT_LABELS[key] || key}</p>
+                  <p className="text-sm font-bold text-foreground">{pct}%</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Screening Questions */}
+      {screeningQuestions && screeningQuestions.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ClipboardList className="h-4 w-4 text-primary" /> Perguntas de Triagem ({screeningQuestions.length})
+          </h2>
+          <div className="space-y-2">
+            {screeningQuestions.map((q: any, idx: number) => (
+              <div key={q.id} className="flex items-start gap-2 text-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary flex-shrink-0 mt-0.5">{idx + 1}</span>
+                <div>
+                  <p className="text-foreground">{q.question}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {q.type === "text" ? "Texto livre" : q.type === "yes_no" ? "Sim/Não" : "Múltipla escolha"}
+                    {q.required ? " · Obrigatória" : " · Opcional"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Ranking */}
       {ranking && ranking.length > 0 && (
         <div>
