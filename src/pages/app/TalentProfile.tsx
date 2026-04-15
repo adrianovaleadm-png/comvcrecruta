@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AssignToJobModal from "@/components/talents/AssignToJobModal";
+import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 
 export default function TalentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -73,6 +74,21 @@ export default function TalentProfile() {
     },
     enabled: !!id,
   });
+
+  const { data: candidateScores } = useQuery({
+    queryKey: ["candidate-scores", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("candidate_scores")
+        .select("*")
+        .eq("candidate_id", id!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const getScoreForJob = (jobId: string) => candidateScores?.find((s: any) => s.job_id === jobId);
 
   const startEdit = () => {
     if (!candidate) return;
@@ -291,17 +307,31 @@ export default function TalentProfile() {
             ) : (
               <div className="space-y-2">
                 {applications.map((app: any) => (
-                  <div key={app.id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{app.jobs?.title || "Vaga"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Etapa: {app.stages?.name || "—"} · Status: {app.status === "active" ? "Ativo" : app.status === "hired" ? "Contratado" : "Reprovado"}
-                        {" · "}{new Date(app.created_at).toLocaleDateString("pt-BR")}
-                      </p>
+                  <div key={app.id} className="rounded-lg border border-border px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{app.jobs?.title || "Vaga"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Etapa: {app.stages?.name || "—"} · Status: {app.status === "active" ? "Ativo" : app.status === "hired" ? "Contratado" : "Reprovado"}
+                          {" · "}{new Date(app.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FitScoreBadge score={getScoreForJob(app.job_id)?.overall_score} candidateId={id!} jobId={app.job_id} />
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/app/vagas/${app.job_id}/pipeline`}>Pipeline</Link>
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/app/vagas/${app.job_id}/pipeline`}>Abrir Pipeline</Link>
-                    </Button>
+                    {getScoreForJob(app.job_id)?.criteria_scores && (
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(getScoreForJob(app.job_id)!.criteria_scores as Record<string, { score: number; nota: string }>).map(([key, val]) => (
+                          <span key={key} className="text-xs text-muted-foreground" title={val.nota}>
+                            {key}: <span className="font-medium text-foreground">{val.score}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

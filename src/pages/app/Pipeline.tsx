@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AddCandidateModal from "@/components/pipeline/AddCandidateModal";
+import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 
 interface Stage {
   id: string;
@@ -85,6 +86,24 @@ export default function Pipeline() {
     },
     enabled: !!id,
   });
+
+  const { data: scores } = useQuery({
+    queryKey: ["pipeline-scores", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("candidate_scores")
+        .select("candidate_id, overall_score")
+        .eq("job_id", id!);
+      if (error) throw error;
+      return data as { candidate_id: string; overall_score: number }[];
+    },
+    enabled: !!id,
+  });
+
+  const getScore = (candidateId: string | null) => {
+    if (!candidateId || !scores) return undefined;
+    return scores.find((s) => s.candidate_id === candidateId)?.overall_score;
+  };
 
   const moveApplication = useMutation({
     mutationFn: async ({ appId, newStageId }: { appId: string; newStageId: string }) => {
@@ -270,6 +289,13 @@ export default function Pipeline() {
                           <Calendar className="h-3 w-3" />
                           {new Date(app.created_at).toLocaleDateString("pt-BR")}
                         </div>
+                        <div className="flex items-center gap-1.5">
+                          <FitScoreBadge
+                            score={getScore(app.candidate_id)}
+                            candidateId={app.candidate_id || ""}
+                            jobId={id!}
+                            compact
+                          />
                         <Badge
                           variant="outline"
                           className={
@@ -282,6 +308,7 @@ export default function Pipeline() {
                         >
                           {app.status === "active" ? "Ativo" : app.status === "hired" ? "Contratado" : "Reprovado"}
                         </Badge>
+                        </div>
                       </div>
                     </div>
                   ))}
