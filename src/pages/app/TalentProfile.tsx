@@ -351,6 +351,20 @@ export default function TalentProfile() {
                         ))}
                       </div>
                     )}
+                    {/* Screening Answers */}
+                    {getAnswersForApp(app.id).length > 0 && (
+                      <div className="mt-2 rounded-lg bg-muted/30 p-2 space-y-1">
+                        <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                          <ClipboardCheck className="h-3 w-3" /> Respostas de triagem
+                        </p>
+                        {getAnswersForApp(app.id).map((a: any, idx: number) => (
+                          <div key={idx} className="text-xs">
+                            <span className="text-muted-foreground">{a.screening_questions?.question}:</span>{" "}
+                            <span className="text-foreground font-medium">{a.answer}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
