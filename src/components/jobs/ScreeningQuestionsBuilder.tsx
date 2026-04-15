@@ -99,6 +99,10 @@ export default function ScreeningQuestionsBuilder({ questions, onChange, jobTitl
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Perguntas de Triagem</h3>
         <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={generateWithAI} disabled={isGenerating} className="gap-1 text-xs">
+            <Sparkles className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} />
+            {isGenerating ? "Gerando…" : "Gerar com IA"}
+          </Button>
           <Button type="button" variant="outline" size="sm" onClick={addSuggested} className="text-xs">
             Sugeridas
           </Button>
