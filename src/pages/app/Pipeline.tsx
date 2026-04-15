@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useRef } from "react";
-import { ArrowLeft, Search, Plus, GripVertical, Mail, Phone, Calendar } from "lucide-react";
+import { ArrowLeft, Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +99,25 @@ export default function Pipeline() {
     },
     enabled: !!id,
   });
+
+  // Fetch screening answer counts per application
+  const { data: screeningStatus } = useQuery({
+    queryKey: ["pipeline-screening-status", id],
+    queryFn: async () => {
+      const appIds = applications?.map((a) => a.id) || [];
+      if (appIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("screening_answers")
+        .select("application_id")
+        .in("application_id", appIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!applications && applications.length > 0,
+  });
+
+  const hasScreeningAnswers = (appId: string) =>
+    screeningStatus?.some((s) => s.application_id === appId) || false;
 
   const getScore = (candidateId: string | null) => {
     if (!candidateId || !scores) return undefined;
@@ -285,9 +304,16 @@ export default function Pipeline() {
                         </div>
                       )}
                       <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                          </div>
+                          {hasScreeningAnswers(app.id) && (
+                            <span title="Triagem respondida" className="flex items-center text-primary">
+                              <ClipboardCheck className="h-3.5 w-3.5" />
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5">
                           <FitScoreBadge

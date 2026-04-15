@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef } from "react";
-import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +87,25 @@ export default function TalentProfile() {
     },
     enabled: !!id,
   });
+
+  // Fetch screening answers for all applications
+  const { data: screeningAnswers } = useQuery({
+    queryKey: ["talent-screening-answers", id],
+    queryFn: async () => {
+      const appIds = applications?.map((a: any) => a.id) || [];
+      if (appIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("screening_answers")
+        .select("application_id, answer, screening_questions(question)")
+        .in("application_id", appIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!applications && applications.length > 0,
+  });
+
+  const getAnswersForApp = (appId: string) =>
+    screeningAnswers?.filter((a: any) => a.application_id === appId) || [];
 
   const getScoreForJob = (jobId: string) => candidateScores?.find((s: any) => s.job_id === jobId);
 
@@ -329,6 +348,20 @@ export default function TalentProfile() {
                           <span key={key} className="text-xs text-muted-foreground" title={val.nota}>
                             {key}: <span className="font-medium text-foreground">{val.score}</span>
                           </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* Screening Answers */}
+                    {getAnswersForApp(app.id).length > 0 && (
+                      <div className="mt-2 rounded-lg bg-muted/30 p-2 space-y-1">
+                        <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                          <ClipboardCheck className="h-3 w-3" /> Respostas de triagem
+                        </p>
+                        {getAnswersForApp(app.id).map((a: any, idx: number) => (
+                          <div key={idx} className="text-xs">
+                            <span className="text-muted-foreground">{a.screening_questions?.question}:</span>{" "}
+                            <span className="text-foreground font-medium">{a.answer}</span>
+                          </div>
                         ))}
                       </div>
                     )}

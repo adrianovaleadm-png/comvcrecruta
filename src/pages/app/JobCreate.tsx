@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useCallback } from "react";
+import ScreeningQuestionsBuilder, { type ScreeningQuestion } from "@/components/jobs/ScreeningQuestionsBuilder";
+import ScoreWeightsConfig, { type ScoreWeights } from "@/components/jobs/ScoreWeightsConfig";
 
 interface JobFormValues {
   title: string;
@@ -20,10 +22,21 @@ interface JobFormValues {
   status: string;
 }
 
+const DEFAULT_WEIGHTS: ScoreWeights = {
+  experiencia: 20,
+  habilidades_tecnicas: 20,
+  localizacao: 15,
+  senioridade: 15,
+  soft_skills: 15,
+  triagem: 15,
+};
+
 export default function JobCreate() {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const lastCallRef = useRef(0);
+  const [screeningQuestions, setScreeningQuestions] = useState<ScreeningQuestion[]>([]);
+  const [scoreWeights, setScoreWeights] = useState<ScoreWeights>(DEFAULT_WEIGHTS);
 
   const form = useForm<JobFormValues>({
     defaultValues: {
@@ -45,10 +58,30 @@ export default function JobCreate() {
           location: values.location || null,
           type: values.type || null,
           status: values.status,
+          score_weights: scoreWeights as any,
         })
         .select()
         .single();
       if (error) throw error;
+
+      // Save screening questions
+      if (screeningQuestions.length > 0) {
+        const rows = screeningQuestions
+          .filter((q) => q.question.trim())
+          .map((q, idx) => ({
+            job_id: data.id,
+            question: q.question.trim(),
+            type: q.type,
+            options: q.type === "choice" ? q.options : null,
+            required: q.required,
+            order_index: idx,
+          }));
+        if (rows.length > 0) {
+          const { error: sqErr } = await supabase.from("screening_questions").insert(rows);
+          if (sqErr) console.error("Error saving screening questions:", sqErr);
+        }
+      }
+
       return data;
     },
     onSuccess: (data) => {
@@ -116,7 +149,7 @@ export default function JobCreate() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit((v) => createJob.mutate(v))} className="space-y-4">
+        <form onSubmit={form.handleSubmit((v) => createJob.mutate(v))} className="space-y-6">
           <FormField
             control={form.control}
             name="title"
@@ -240,6 +273,16 @@ export default function JobCreate() {
               </FormItem>
             )}
           />
+
+          {/* Screening Questions */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <ScreeningQuestionsBuilder questions={screeningQuestions} onChange={setScreeningQuestions} />
+          </div>
+
+          {/* Score Weights */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <ScoreWeightsConfig weights={scoreWeights} onChange={setScoreWeights} />
+          </div>
 
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={createJob.isPending || isGenerating}>

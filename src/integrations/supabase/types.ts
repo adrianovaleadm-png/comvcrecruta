@@ -341,6 +341,7 @@ export type Database = {
           description: string | null
           id: string
           location: string | null
+          score_weights: Json | null
           status: string
           title: string
           type: string | null
@@ -351,6 +352,7 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
+          score_weights?: Json | null
           status?: string
           title: string
           type?: string | null
@@ -361,6 +363,7 @@ export type Database = {
           description?: string | null
           id?: string
           location?: string | null
+          score_weights?: Json | null
           status?: string
           title?: string
           type?: string | null
@@ -397,6 +400,83 @@ export type Database = {
           user_type?: Database["public"]["Enums"]["user_type"]
         }
         Relationships: []
+      }
+      screening_answers: {
+        Row: {
+          answer: string
+          application_id: string
+          created_at: string
+          id: string
+          question_id: string
+        }
+        Insert: {
+          answer?: string
+          application_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+        }
+        Update: {
+          answer?: string
+          application_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_answers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "screening_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      screening_questions: {
+        Row: {
+          id: string
+          job_id: string
+          options: Json | null
+          order_index: number
+          question: string
+          required: boolean
+          type: string
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          options?: Json | null
+          order_index?: number
+          question: string
+          required?: boolean
+          type?: string
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          options?: Json | null
+          order_index?: number
+          question?: string
+          required?: boolean
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_questions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stages: {
         Row: {
