@@ -373,6 +373,12 @@ export default function Pipeline() {
         jobId={id!}
         stages={stages || []}
       />
+      <CandidateCompare
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        candidateIds={selectedForCompare}
+        jobId={id!}
+      />
     </div>
   );
 }
