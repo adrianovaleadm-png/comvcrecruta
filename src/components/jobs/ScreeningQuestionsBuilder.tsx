@@ -28,8 +28,37 @@ const SUGGESTED_QUESTIONS: ScreeningQuestion[] = [
   { question: "Descreva sua experiência relevante para esta vaga.", type: "text", options: [], required: true },
 ];
 
-export default function ScreeningQuestionsBuilder({ questions, onChange }: Props) {
+export default function ScreeningQuestionsBuilder({ questions, onChange, jobTitle, jobDescription }: Props) {
   const [newOption, setNewOption] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!jobTitle?.trim()) {
+      toast.error("Preencha o título da vaga antes de gerar perguntas com IA.");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-screening-questions", {
+        body: { title: jobTitle, description: jobDescription },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const generated: ScreeningQuestion[] = (data.questions || []).map((q: any) => ({
+        question: q.question || "",
+        type: q.type === "choice" || q.type === "yes_no" ? q.type : "text",
+        options: Array.isArray(q.options) ? q.options : [],
+        required: q.required !== false,
+      }));
+      onChange([...questions, ...generated]);
+      toast.success(`${generated.length} perguntas geradas com IA!`);
+    } catch (e: any) {
+      console.error("AI screening generation error:", e);
+      toast.error(e?.message || "Erro ao gerar perguntas. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const add = () => {
     onChange([...questions, { question: "", type: "text", options: [], required: true }]);
