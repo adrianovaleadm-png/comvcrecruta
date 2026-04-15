@@ -46,6 +46,7 @@ export type Database = {
       }
       applications: {
         Row: {
+          candidate_id: string | null
           created_at: string
           id: string
           job_id: string
@@ -54,6 +55,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          candidate_id?: string | null
           created_at?: string
           id?: string
           job_id: string
@@ -62,6 +64,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          candidate_id?: string | null
           created_at?: string
           id?: string
           job_id?: string
@@ -70,6 +73,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "applications_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "applications_job_id_fkey"
             columns: ["job_id"]
@@ -85,6 +95,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      candidates: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
       }
       companies: {
         Row: {
