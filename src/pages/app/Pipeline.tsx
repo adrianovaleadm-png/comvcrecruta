@@ -297,6 +297,17 @@ export default function Pipeline() {
                       }`}
                     >
                       <div className="mb-2 flex items-center gap-2">
+                        <Checkbox
+                          checked={!!app.candidate_id && selectedForCompare.includes(app.candidate_id)}
+                          onCheckedChange={(checked) => {
+                            if (!app.candidate_id) return;
+                            setSelectedForCompare((prev) =>
+                              checked ? [...prev.filter((id) => id !== app.candidate_id), app.candidate_id!].slice(0, 3) : prev.filter((id) => id !== app.candidate_id)
+                            );
+                          }}
+                          className="h-3.5 w-3.5"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground truncate">
                           {app.candidates?.name || "Candidato"}
