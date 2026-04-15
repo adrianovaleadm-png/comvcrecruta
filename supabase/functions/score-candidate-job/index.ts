@@ -35,15 +35,15 @@ serve(async (req) => {
       .eq("candidate_id", candidate_id);
     const candidateTags = tagRows?.map((t: any) => t.tags?.name).filter(Boolean) || [];
 
-    // Fetch job (including score_weights)
+    // Fetch job
     const { data: job, error: jErr } = await supabase
       .from("jobs")
-      .select("title, description, location, type, status, score_weights")
+      .select("title, description, location, type, status, score_weights, seniority, work_model, required_skills")
       .eq("id", job_id)
       .single();
     if (jErr || !job) return jsonResp({ error: "Vaga não encontrada" }, 404);
 
-    // Fetch screening answers for this candidate+job
+    // Fetch screening answers
     const { data: appRow } = await supabase
       .from("applications")
       .select("id")
@@ -68,13 +68,8 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return jsonResp({ error: "LOVABLE_API_KEY não configurada" }, 500);
 
+    const jobAny = job as any;
     const hasScreening = screeningText.length > 0;
-    const criteriaList = `1. experiencia - Experiência e senioridade
-2. habilidades_tecnicas - Habilidades técnicas relevantes
-3. localizacao - Compatibilidade geográfica
-4. senioridade - Nível de senioridade adequado
-5. soft_skills - Habilidades comportamentais
-${hasScreening ? "6. triagem - Qualidade e relevância das respostas de triagem" : ""}`;
 
     const prompt = `Você é um especialista em recrutamento e seleção.
 
@@ -91,16 +86,23 @@ Avalie a aderência (fit) do candidato abaixo para a vaga descrita. Retorne APEN
 - Título: ${job.title}
 - Tipo: ${job.type || "Não informado"}
 - Localização: ${job.location || "Não informada"}
+- Senioridade: ${jobAny.seniority || "Não informada"}
+- Modalidade: ${jobAny.work_model || "Não informada"}
+- Habilidades requeridas: ${jobAny.required_skills?.join(", ") || "Não informadas"}
 - Descrição: ${job.description || "Não informada"}
 ${hasScreening ? `\n## Respostas de Triagem\n${screeningText}` : ""}
 
 ## Instruções
 Avalie em ${hasScreening ? "6" : "5"} critérios (score 0-100 cada):
-${criteriaList}
+1. experiencia - Experiência e senioridade
+2. habilidades_tecnicas - Habilidades técnicas relevantes
+3. localizacao - Compatibilidade geográfica
+4. senioridade - Nível de senioridade adequado
+5. soft_skills - Habilidades comportamentais
+${hasScreening ? "6. triagem - Qualidade e relevância das respostas de triagem" : ""}
 
 Use o JSON via tool call.`;
 
-    // Build criteria properties for tool
     const criteriaProps: any = {
       experiencia: { type: "object", properties: { score: { type: "integer" }, nota: { type: "string" } }, required: ["score", "nota"] },
       habilidades_tecnicas: { type: "object", properties: { score: { type: "integer" }, nota: { type: "string" } }, required: ["score", "nota"] },
@@ -176,7 +178,6 @@ Use o JSON via tool call.`;
       }
       overallScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : result.overall_score;
     } else {
-      // Simple average
       const scores = Object.values(result.criteria_scores).map((v: any) => v.score);
       overallScore = Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length);
     }

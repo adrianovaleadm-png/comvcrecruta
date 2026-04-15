@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, location, type, status, existingDescription } = await req.json();
+    const { title, location, type, status, seniority, work_model, required_skills, existingDescription } = await req.json();
 
     if (!title || typeof title !== "string") {
       return new Response(JSON.stringify({ error: "Campo 'title' é obrigatório." }), {
@@ -30,6 +30,9 @@ serve(async (req) => {
     contextParts.push(`Título da vaga: ${title}`);
     if (location) contextParts.push(`Localização: ${location}`);
     if (type) contextParts.push(`Tipo de contratação: ${type}`);
+    if (seniority) contextParts.push(`Senioridade: ${seniority}`);
+    if (work_model) contextParts.push(`Modalidade: ${work_model}`);
+    if (required_skills && required_skills.length > 0) contextParts.push(`Habilidades requeridas: ${required_skills.join(", ")}`);
     if (status) contextParts.push(`Status: ${status}`);
     const context = contextParts.join("\n");
 

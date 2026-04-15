@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock } from "lucide-react";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 
 const statusLabels: Record<string, string> = {
@@ -16,6 +16,20 @@ const statusColors: Record<string, string> = {
   open: "bg-success/10 text-success border-success/30",
   draft: "bg-muted text-muted-foreground border-border",
   closed: "bg-destructive/10 text-destructive border-destructive/30",
+};
+
+const seniorityLabels: Record<string, string> = {
+  junior: "Júnior",
+  pleno: "Pleno",
+  senior: "Sênior",
+  specialist: "Especialista",
+  lead: "Liderança",
+};
+
+const workModelLabels: Record<string, string> = {
+  presencial: "Presencial",
+  hibrido: "Híbrido",
+  remoto: "Remoto",
 };
 
 export default function JobDetail() {
@@ -90,6 +104,8 @@ export default function JobDetail() {
     return <div className="py-12 text-center text-muted-foreground">Vaga não encontrada.</div>;
   }
 
+  const jobAny = job as any;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -105,7 +121,7 @@ export default function JobDetail() {
               {statusLabels[job.status] || job.status}
             </Badge>
           </div>
-          <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             {job.location && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" /> {job.location}
@@ -114,6 +130,21 @@ export default function JobDetail() {
             {job.type && (
               <span className="flex items-center gap-1">
                 <Briefcase className="h-3.5 w-3.5" /> {job.type}
+              </span>
+            )}
+            {jobAny.seniority && (
+              <span className="flex items-center gap-1">
+                <GraduationCap className="h-3.5 w-3.5" /> {seniorityLabels[jobAny.seniority] || jobAny.seniority}
+              </span>
+            )}
+            {jobAny.work_model && (
+              <span className="flex items-center gap-1">
+                <Monitor className="h-3.5 w-3.5" /> {workModelLabels[jobAny.work_model] || jobAny.work_model}
+              </span>
+            )}
+            {jobAny.department && (
+              <span className="flex items-center gap-1">
+                <Building className="h-3.5 w-3.5" /> {jobAny.department}
               </span>
             )}
             <span className="flex items-center gap-1">
@@ -131,6 +162,46 @@ export default function JobDetail() {
           </Link>
         </Button>
       </div>
+
+      {/* Extra info cards */}
+      {(jobAny.salary_min || jobAny.salary_max || jobAny.headcount > 1 || jobAny.deadline || (jobAny.required_skills && jobAny.required_skills.length > 0)) && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {(jobAny.salary_min || jobAny.salary_max) && (
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <DollarSign className="mx-auto h-4 w-4 text-primary mb-1" />
+              <p className="text-xs text-muted-foreground">Faixa salarial</p>
+              <p className="text-sm font-semibold text-foreground">
+                {jobAny.salary_min ? `R$ ${Number(jobAny.salary_min).toLocaleString("pt-BR")}` : "—"}
+                {" — "}
+                {jobAny.salary_max ? `R$ ${Number(jobAny.salary_max).toLocaleString("pt-BR")}` : "—"}
+              </p>
+            </div>
+          )}
+          {jobAny.headcount > 1 && (
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <Users className="mx-auto h-4 w-4 text-primary mb-1" />
+              <p className="text-xs text-muted-foreground">Vagas</p>
+              <p className="text-sm font-semibold text-foreground">{jobAny.headcount}</p>
+            </div>
+          )}
+          {jobAny.deadline && (
+            <div className="rounded-lg border border-border bg-card p-3 text-center">
+              <CalendarClock className="mx-auto h-4 w-4 text-primary mb-1" />
+              <p className="text-xs text-muted-foreground">Prazo</p>
+              <p className="text-sm font-semibold text-foreground">{new Date(jobAny.deadline).toLocaleDateString("pt-BR")}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Required Skills */}
+      {jobAny.required_skills && jobAny.required_skills.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {jobAny.required_skills.map((skill: string) => (
+            <Badge key={skill} variant="secondary">{skill}</Badge>
+          ))}
+        </div>
+      )}
 
       {job.description && (
         <div className="rounded-lg border border-border bg-card p-4">
@@ -155,15 +226,16 @@ export default function JobDetail() {
           ))}
         </div>
       </div>
+
       {/* Score Weights */}
-      {(job as any).score_weights && (
+      {jobAny.score_weights && (
         <div className="rounded-lg border border-border bg-card p-4">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
             <SlidersHorizontal className="h-4 w-4 text-primary" /> Pesos do Fit Score
           </h2>
           <div className="flex flex-wrap gap-3">
-            {Object.entries((job as any).score_weights as Record<string, number>).map(([key, val]) => {
-              const total = Object.values((job as any).score_weights as Record<string, number>).reduce((s: number, v: number) => s + v, 0);
+            {Object.entries(jobAny.score_weights as Record<string, number>).map(([key, val]) => {
+              const total = Object.values(jobAny.score_weights as Record<string, number>).reduce((s: number, v: number) => s + v, 0);
               const pct = total > 0 ? Math.round((val / total) * 100) : 0;
               return (
                 <div key={key} className="rounded-lg border border-border px-3 py-2 text-center">
