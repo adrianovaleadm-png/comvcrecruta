@@ -131,6 +131,51 @@ export type Database = {
           },
         ]
       }
+      candidate_scores: {
+        Row: {
+          ai_summary: string | null
+          candidate_id: string
+          created_at: string
+          criteria_scores: Json
+          id: string
+          job_id: string
+          overall_score: number
+        }
+        Insert: {
+          ai_summary?: string | null
+          candidate_id: string
+          created_at?: string
+          criteria_scores?: Json
+          id?: string
+          job_id: string
+          overall_score?: number
+        }
+        Update: {
+          ai_summary?: string | null
+          candidate_id?: string
+          created_at?: string
+          criteria_scores?: Json
+          id?: string
+          job_id?: string
+          overall_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_scores_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_scores_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_tags: {
         Row: {
           candidate_id: string
