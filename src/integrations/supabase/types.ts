@@ -335,6 +335,48 @@ export type Database = {
           },
         ]
       }
+      job_templates: {
+        Row: {
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          required_skills: string[] | null
+          score_weights: Json | null
+          screening_questions: Json | null
+          seniority: string | null
+          title: string
+          updated_at: string
+          work_model: string | null
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          required_skills?: string[] | null
+          score_weights?: Json | null
+          screening_questions?: Json | null
+          seniority?: string | null
+          title: string
+          updated_at?: string
+          work_model?: string | null
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          required_skills?: string[] | null
+          score_weights?: Json | null
+          screening_questions?: Json | null
+          seniority?: string | null
+          title?: string
+          updated_at?: string
+          work_model?: string | null
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           created_at: string
