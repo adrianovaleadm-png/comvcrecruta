@@ -96,27 +96,101 @@ export type Database = {
           },
         ]
       }
+      candidate_files: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          name: string | null
+          type: string
+          url: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+          url: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_files_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_tags: {
+        Row: {
+          candidate_id: string
+          tag_id: string
+        }
+        Insert: {
+          candidate_id: string
+          tag_id: string
+        }
+        Update: {
+          candidate_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_tags_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
+          city: string | null
           created_at: string
           email: string
           id: string
+          linkedin_url: string | null
           name: string
           phone: string | null
+          summary: string | null
         }
         Insert: {
+          city?: string | null
           created_at?: string
           email: string
           id?: string
+          linkedin_url?: string | null
           name: string
           phone?: string | null
+          summary?: string | null
         }
         Update: {
+          city?: string | null
           created_at?: string
           email?: string
           id?: string
+          linkedin_url?: string | null
           name?: string
           phone?: string | null
+          summary?: string | null
         }
         Relationships: []
       }
@@ -307,6 +381,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tags: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
     }
     Views: {
