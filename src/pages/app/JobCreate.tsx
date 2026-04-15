@@ -7,10 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCw, CalendarIcon, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useCallback } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import ScreeningQuestionsBuilder, { type ScreeningQuestion } from "@/components/jobs/ScreeningQuestionsBuilder";
 import ScoreWeightsConfig, { type ScoreWeights } from "@/components/jobs/ScoreWeightsConfig";
 
@@ -20,6 +26,12 @@ interface JobFormValues {
   location: string;
   type: string;
   status: string;
+  seniority: string;
+  work_model: string;
+  department: string;
+  salary_min: string;
+  salary_max: string;
+  headcount: string;
 }
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
@@ -37,6 +49,9 @@ export default function JobCreate() {
   const lastCallRef = useRef(0);
   const [screeningQuestions, setScreeningQuestions] = useState<ScreeningQuestion[]>([]);
   const [scoreWeights, setScoreWeights] = useState<ScoreWeights>(DEFAULT_WEIGHTS);
+  const [deadline, setDeadline] = useState<Date | undefined>();
+  const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
 
   const form = useForm<JobFormValues>({
     defaultValues: {
@@ -45,8 +60,29 @@ export default function JobCreate() {
       location: "",
       type: "CLT",
       status: "open",
+      seniority: "",
+      work_model: "",
+      department: "",
+      salary_min: "",
+      salary_max: "",
+      headcount: "1",
     },
   });
+
+  const handleAddSkill = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      const val = skillInput.trim();
+      if (val && !requiredSkills.includes(val)) {
+        setRequiredSkills((prev) => [...prev, val]);
+      }
+      setSkillInput("");
+    }
+  };
+
+  const removeSkill = (skill: string) => {
+    setRequiredSkills((prev) => prev.filter((s) => s !== skill));
+  };
 
   const createJob = useMutation({
     mutationFn: async (values: JobFormValues) => {
@@ -59,7 +95,15 @@ export default function JobCreate() {
           type: values.type || null,
           status: values.status,
           score_weights: scoreWeights as any,
-        })
+          seniority: values.seniority || null,
+          work_model: values.work_model || null,
+          department: values.department || null,
+          salary_min: values.salary_min ? parseInt(values.salary_min) : null,
+          salary_max: values.salary_max ? parseInt(values.salary_max) : null,
+          headcount: values.headcount ? parseInt(values.headcount) : 1,
+          deadline: deadline ? format(deadline, "yyyy-MM-dd") : null,
+          required_skills: requiredSkills.length > 0 ? requiredSkills : null,
+        } as any)
         .select()
         .single();
       if (error) throw error;
@@ -115,6 +159,9 @@ export default function JobCreate() {
           location: form.getValues("location"),
           type: form.getValues("type"),
           status: form.getValues("status"),
+          seniority: form.getValues("seniority"),
+          work_model: form.getValues("work_model"),
+          required_skills: requiredSkills,
           existingDescription: improve ? form.getValues("description") : undefined,
         },
       });
@@ -130,7 +177,7 @@ export default function JobCreate() {
     } finally {
       setIsGenerating(false);
     }
-  }, [form]);
+  }, [form, requiredSkills]);
 
   const descriptionValue = form.watch("description");
 
@@ -211,27 +258,193 @@ export default function JobCreate() {
             )}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Localização</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: São Paulo, SP" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Detalhes */}
+          <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+            <h3 className="text-sm font-semibold text-foreground">Detalhes</h3>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Localização</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: São Paulo, SP" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CLT">CLT</SelectItem>
+                        <SelectItem value="PJ">PJ</SelectItem>
+                        <SelectItem value="Intern">Estágio</SelectItem>
+                        <SelectItem value="Contract">Contrato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="seniority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senioridade</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="junior">Júnior</SelectItem>
+                        <SelectItem value="pleno">Pleno</SelectItem>
+                        <SelectItem value="senior">Sênior</SelectItem>
+                        <SelectItem value="specialist">Especialista</SelectItem>
+                        <SelectItem value="lead">Liderança</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="work_model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Modalidade</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="presencial">Presencial</SelectItem>
+                        <SelectItem value="hibrido">Híbrido</SelectItem>
+                        <SelectItem value="remoto">Remoto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Departamento</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Engenharia" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="headcount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Qtd. de vagas</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} placeholder="1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="salary_min"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Salário mín. (R$)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} placeholder="Ex: 5000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="salary_max"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Salário máx. (R$)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} placeholder="Ex: 12000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Deadline */}
+            <div>
+              <label className="text-sm font-medium leading-none">Data limite</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "mt-1.5 w-full justify-start text-left font-normal",
+                      !deadline && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {deadline ? format(deadline, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadline}
+                    onSelect={setDeadline}
+                    disabled={(d) => d < new Date()}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Status */}
             <FormField
               control={form.control}
-              name="type"
+              name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo</FormLabel>
+                  <FormLabel>Status</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -239,10 +452,9 @@ export default function JobCreate() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="CLT">CLT</SelectItem>
-                      <SelectItem value="PJ">PJ</SelectItem>
-                      <SelectItem value="Intern">Estágio</SelectItem>
-                      <SelectItem value="Contract">Contrato</SelectItem>
+                      <SelectItem value="open">Aberta</SelectItem>
+                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="closed">Fechada</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -251,28 +463,26 @@ export default function JobCreate() {
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="open">Aberta</SelectItem>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                    <SelectItem value="closed">Fechada</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Required Skills */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Habilidades Requeridas</h3>
+            <div className="flex flex-wrap gap-2">
+              {requiredSkills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+                  {skill}
+                  <button type="button" onClick={() => removeSkill(skill)} className="ml-1 rounded-full hover:bg-muted p-0.5">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <Input
+              placeholder="Digite e pressione Enter para adicionar"
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={handleAddSkill}
+            />
+          </div>
 
           {/* Screening Questions */}
           <div className="rounded-lg border border-border bg-card p-4">
