@@ -338,36 +338,60 @@ export type Database = {
       jobs: {
         Row: {
           created_at: string
+          deadline: string | null
+          department: string | null
           description: string | null
+          headcount: number
           id: string
           location: string | null
+          required_skills: string[] | null
+          salary_max: number | null
+          salary_min: number | null
           score_weights: Json | null
+          seniority: string | null
           status: string
           title: string
           type: string | null
           updated_at: string
+          work_model: string | null
         }
         Insert: {
           created_at?: string
+          deadline?: string | null
+          department?: string | null
           description?: string | null
+          headcount?: number
           id?: string
           location?: string | null
+          required_skills?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
           score_weights?: Json | null
+          seniority?: string | null
           status?: string
           title: string
           type?: string | null
           updated_at?: string
+          work_model?: string | null
         }
         Update: {
           created_at?: string
+          deadline?: string | null
+          department?: string | null
           description?: string | null
+          headcount?: number
           id?: string
           location?: string | null
+          required_skills?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
           score_weights?: Json | null
+          seniority?: string | null
           status?: string
           title?: string
           type?: string | null
           updated_at?: string
+          work_model?: string | null
         }
         Relationships: []
       }
