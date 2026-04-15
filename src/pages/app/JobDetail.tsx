@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban } from "lucide-react";
 
 const statusLabels: Record<string, string> = {
   open: "Aberta",
@@ -84,6 +84,14 @@ export default function JobDetail() {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button asChild className="gap-2">
+          <Link to={`/app/vagas/${id}/pipeline`}>
+            <Kanban className="h-4 w-4" /> Ver Pipeline
+          </Link>
+        </Button>
       </div>
 
       {job.description && (
