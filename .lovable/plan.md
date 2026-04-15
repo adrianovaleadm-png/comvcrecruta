@@ -1,60 +1,86 @@
 
 
-## Plano: Campos Adicionais na Criação de Vaga
+## Plano: Implementação Completa de Melhorias do ATS
 
-### Novos campos na tabela `jobs`
+Dado o volume, vou dividir em **4 fases** priorizando impacto no Fit Score e usabilidade.
 
-| Campo | Tipo | Exemplo |
-|-------|------|---------|
-| `seniority` | text | junior, pleno, senior, specialist, lead |
-| `work_model` | text | presencial, hibrido, remoto |
-| `department` | text | Engenharia, Marketing, etc. |
-| `salary_min` | integer (nullable) | 5000 |
-| `salary_max` | integer (nullable) | 12000 |
-| `headcount` | integer default 1 | 1 |
-| `deadline` | date (nullable) | 2026-05-30 |
-| `required_skills` | text[] (nullable) | {React, TypeScript, Node} |
+---
 
-### Alterações
+### Fase 1 — Impacto Direto no Fit Score (esta implementação)
 
-1. **Migration** — Adicionar 8 colunas à tabela `jobs`.
+**1.1 Fit Score Automático ao Candidatar**
+- Após salvar respostas de triagem em `AddCandidateModal`, disparar `score-candidate-job` em background (fire-and-forget).
+- Toast informando "Calculando Fit Score..." e invalidar queries ao completar.
 
-2. **`JobCreate.tsx`** — Adicionar campos ao formulário:
-   - Select para Senioridade (Júnior/Pleno/Sênior/Especialista/Liderança)
-   - Select para Modalidade (Presencial/Híbrido/Remoto)
-   - Input para Departamento
-   - Dois inputs numéricos lado a lado para faixa salarial (R$ mín / R$ máx)
-   - Input numérico para quantidade de vagas
-   - Date picker para prazo
-   - Input de tags para habilidades requeridas (adicionar com Enter)
+**1.2 Edição de Vagas (JobEdit)**
+- Nova rota `/app/vagas/:id/editar` com componente `JobEdit.tsx`.
+- Carregar dados da vaga existente, incluindo perguntas de triagem e pesos.
+- Reutilizar `ScreeningQuestionsBuilder` e `ScoreWeightsConfig`.
+- Botão "Editar" no `JobDetail.tsx`.
+- Ao salvar: update na tabela `jobs`, delete+reinsert em `screening_questions`.
 
-3. **`JobFormValues` interface** — Expandir com os novos campos.
+**1.3 Parsing de Currículo com IA**
+- Nova edge function `parse-resume` que recebe URL do arquivo (do bucket `candidate-files`).
+- Extrai texto do PDF e usa IA para retornar nome, email, cidade, skills, resumo.
+- Botão "Extrair com IA" no `TalentProfile.tsx` e no `NewCandidateModal.tsx` ao fazer upload de CV.
+- Preenche campos automaticamente.
 
-4. **Edge Function `score-candidate-job`** — Incluir senioridade, modalidade e habilidades requeridas no prompt da IA para scoring mais preciso.
+---
 
-5. **Edge Function `generate-job-description`** — Passar senioridade e modalidade como contexto para gerar descrições mais completas.
+### Fase 2 — Visibilidade e Comparação
 
-6. **`JobDetail.tsx`** — Exibir os novos campos na visualização da vaga.
+**2.1 Histórico de Atividades (UI)**
+- Componente `ActivityFeed.tsx` que lista `activity_events`.
+- Exibir no Dashboard (`Painel.tsx`) e no `TalentProfile.tsx` (filtrado por candidato).
+- Timeline visual com ícones por tipo de evento.
 
-### Organização visual do formulário
+**2.2 Comparação de Candidatos**
+- No Pipeline, checkbox para selecionar 2-3 candidatos.
+- Modal/página de comparação lado a lado: scores por critério, respostas de triagem, perfil.
+- Tabela comparativa com barras de progresso.
 
-```text
-Título *                          
-Descrição [Gerar com IA]         
-─── Detalhes ───
-Localização    | Tipo (CLT/PJ)   
-Senioridade    | Modalidade      
-Departamento   | Qtd. vagas      
-Faixa salarial (R$ min — R$ max) 
-Data limite                       
-─── Habilidades Requeridas ───
-[React] [TypeScript] [+ Adicionar]
-─── Perguntas de Triagem ───
-(builder existente)
-─── Pesos do Fit Score ───
-(config existente)
-```
+---
 
-### Resultado
-Formulário completo com todos os dados relevantes para o recrutador, alimentando diretamente o Fit Score e a geração de descrição com IA.
+### Fase 3 — Produtividade
+
+**3.1 Templates de Vagas**
+- Nova tabela `job_templates` (title, description, screening_questions, score_weights, required_skills, seniority, work_model).
+- Botão "Salvar como Template" no `JobCreate/JobEdit`.
+- Botão "Usar Template" no `JobCreate` que preenche todos os campos.
+
+**3.2 Página Pública de Candidatura**
+- Rota pública `/vaga/:id/candidatar` sem necessidade de login.
+- Exibe título, descrição, requisitos da vaga.
+- Formulário: dados do candidato + respostas de triagem.
+- Cria candidato + application + screening_answers.
+
+---
+
+### Fase 4 — Analytics
+
+**4.1 Métricas de Funil**
+- Nova edge function `get-funnel-metrics` que calcula tempo médio por etapa e conversão entre stages.
+- Página `Analytics.tsx` com gráfico de funil e tabelas de métricas.
+- Filtros por vaga e período.
+
+---
+
+### Detalhes Técnicos
+
+| Item | Tipo | Arquivos |
+|------|------|----------|
+| Fit Score automático | Frontend | `AddCandidateModal.tsx` |
+| JobEdit | Migration + Frontend | Nova rota, `JobEdit.tsx` |
+| Parse Resume | Edge Function + Frontend | `parse-resume/index.ts`, `TalentProfile.tsx` |
+| Activity Feed | Frontend | Novo `ActivityFeed.tsx`, `Painel.tsx`, `TalentProfile.tsx` |
+| Comparação | Frontend | `Pipeline.tsx`, novo `CandidateCompare.tsx` |
+| Templates | Migration + Frontend | Nova tabela, `JobCreate.tsx` |
+| Página Pública | Frontend | Nova rota pública, novo componente |
+| Métricas | Edge Function + Frontend | `get-funnel-metrics/index.ts`, `Analytics.tsx` |
+
+### Novas tabelas
+- `job_templates` — para salvar configurações reutilizáveis de vagas.
+
+### Estratégia de execução
+Implemento todas as 4 fases sequencialmente, começando pela Fase 1 que tem impacto direto no core do sistema (Fit Score).
 
