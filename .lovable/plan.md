@@ -1,92 +1,116 @@
 
 
-## Plano: Sistema de Scoring Candidato × Vaga (Fit Score)
+## Plano: Sistema de Triagem + Pesos Customizáveis no Fit Score
 
 ### Conceito
-Criar um sistema de **pontuação de aderência (fit score)** que avalia automaticamente o quanto cada candidato é adequado para uma vaga específica, usando IA para analisar o perfil do candidato contra os requisitos da vaga.
+Duas adições fundamentais ao sistema de scoring:
+1. **Perguntas de triagem por vaga** — candidatos respondem perguntas específicas que alimentam o Fit Score.
+2. **Pesos customizáveis** — o recrutador define a importância relativa de cada critério (experiência, habilidades técnicas, localização, senioridade, soft skills, triagem).
 
 ### Arquitetura
 
 ```text
-┌─────────────┐     ┌──────────────────────┐     ┌──────────┐
-│  Frontend   │────▶│ Edge Function         │────▶│ Lovable  │
-│  (trigger)  │     │ score-candidate-job   │     │ AI (LLM) │
-│             │◀────│                       │◀────│          │
-└─────────────┘     └──────────────────────┘     └──────────┘
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │ candidate_   │
-                    │ scores (DB)  │
-                    └──────────────┘
+Recrutador cria vaga
+  ├── Define perguntas de triagem
+  └── Define pesos dos critérios (ex: técnico=40%, triagem=25%, ...)
+        │
+Candidato se candidata
+  └── Responde perguntas de triagem
+        │
+Fit Score (Edge Function)
+  ├── Busca respostas de triagem
+  ├── Busca pesos da vaga
+  └── Calcula score ponderado (score × peso de cada critério)
 ```
 
-### 1. Banco de Dados — Nova tabela `candidate_scores`
+### 1. Banco de Dados — 2 novas tabelas + 1 coluna
 
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid PK | |
-| candidate_id | uuid FK candidates | |
-| job_id | uuid FK jobs | |
-| overall_score | integer (0-100) | Pontuação geral |
-| criteria_scores | jsonb | Detalhamento por critério |
-| ai_summary | text | Resumo da IA sobre o fit |
-| created_at | timestamp | |
+**`screening_questions`**
 
-- Constraint UNIQUE em (candidate_id, job_id) para evitar duplicatas.
-- RLS permissiva (modo dev).
+| Coluna | Tipo |
+|--------|------|
+| id | uuid PK |
+| job_id | uuid FK jobs |
+| question | text |
+| type | text ('text', 'choice', 'yes_no') |
+| options | jsonb (para 'choice') |
+| required | boolean default true |
+| order_index | integer |
 
-**`criteria_scores` exemplo:**
+**`screening_answers`**
+
+| Coluna | Tipo |
+|--------|------|
+| id | uuid PK |
+| application_id | uuid FK applications |
+| question_id | uuid FK screening_questions |
+| answer | text |
+| created_at | timestamp |
+
+UNIQUE em (application_id, question_id).
+
+**Nova coluna em `jobs`:**
+- `score_weights` (jsonb, default null) — armazena os pesos por critério.
+
+Exemplo:
 ```json
 {
-  "experiencia": { "score": 85, "nota": "5+ anos em backend" },
-  "habilidades_tecnicas": { "score": 70, "nota": "Conhece 4 de 6 tecnologias" },
-  "localizacao": { "score": 100, "nota": "Mesma cidade" },
-  "senioridade": { "score": 90, "nota": "Compatível com o nível" },
-  "soft_skills": { "score": 75, "nota": "Boa comunicação no resumo" }
+  "experiencia": 20,
+  "habilidades_tecnicas": 25,
+  "localizacao": 10,
+  "senioridade": 15,
+  "soft_skills": 10,
+  "triagem": 20
 }
 ```
+Se null, usa pesos iguais (padrão).
 
-### 2. Edge Function `score-candidate-job`
+### 2. UI — Configuração na criação/edição da vaga (`JobCreate.tsx`)
 
-- Recebe `{ candidate_id, job_id }`.
-- Busca dados do candidato (nome, resumo, tags, cidade) e da vaga (título, descrição, localização, tipo).
-- Monta prompt em PT-BR pedindo ao LLM para avaliar o fit em 5 critérios com score 0-100 cada + score geral + resumo.
-- Retorna JSON estruturado e salva/atualiza em `candidate_scores`.
-- Usa modelo Gemini via Lovable AI gateway.
+**Seção "Perguntas de Triagem":**
+- Adicionar perguntas com tipo (Texto livre / Múltipla escolha / Sim-Não).
+- Reordenar por setas. Marcar como obrigatória ou não.
+- Perguntas sugeridas por padrão (pretensão salarial, disponibilidade, experiência relevante).
 
-### 3. UI — Onde o score aparece
+**Seção "Pesos do Fit Score":**
+- 6 sliders (um por critério) com valores de 0 a 100.
+- Exibir porcentagem normalizada em tempo real (os pesos são proporcionais — se todos valem 20, cada um = ~17%).
+- Preset rápido: "Técnico" (prioriza habilidades), "Cultural" (prioriza soft skills e triagem), "Padrão" (igual).
 
-**A) Card no Pipeline (Kanban):**
-- Cada card de candidato exibe um badge colorido com o score (ex: 85%).
-- Verde ≥ 70, Amarelo 40-69, Vermelho < 40.
-- Se não avaliado, mostra botão "Avaliar fit".
+### 3. UI — Respostas no modal de candidatura (`AddCandidateModal.tsx`)
 
-**B) Perfil do Candidato (`/talentos/:id`):**
-- Na seção "Candidaturas", ao lado de cada vaga, mostrar o score com breakdown dos critérios.
-- Botão "Calcular fit" para gerar/regerar a análise.
+- Após selecionar/criar candidato, se a vaga tem perguntas de triagem → exibir passo 2 com formulário.
+- Campos renderizados por tipo (textarea, radio, select).
+- Validar obrigatórios antes de criar candidatura.
+- Salvar em `screening_answers`.
 
-**C) Detalhe da Vaga (`/vagas/:id`):**
-- Nova seção "Ranking de Candidatos" — lista ordenada por score decrescente.
-- Mostra nome, score geral, resumo da IA.
+### 4. Edge Function — `score-candidate-job` atualizada
 
-### 4. Fluxos
+- Buscar `screening_answers` + `screening_questions` da candidatura.
+- Buscar `score_weights` da vaga.
+- Incluir respostas no prompt como seção "## Respostas de Triagem".
+- Adicionar 6º critério: `triagem` (qualidade das respostas).
+- Calcular `overall_score` ponderado: `Σ(score_i × peso_i) / Σ(pesos)`.
+- Se não há pesos definidos, média simples (comportamento atual).
 
-- **Avaliação manual:** Usuário clica "Avaliar fit" → chama edge function → exibe resultado.
-- **Avaliação automática:** Ao criar uma candidatura (application), disparar avaliação automaticamente em background.
-- **Re-avaliação:** Permitir recalcular se a descrição da vaga mudar.
+### 5. UI — Indicadores visuais
 
-### 5. Alterações por arquivo
+- **Pipeline (card):** ícone indicando se triagem foi respondida.
+- **Perfil do candidato:** exibir perguntas e respostas na seção de candidaturas.
+- **Detalhe da vaga:** mostrar pesos configurados e perguntas definidas.
+
+### 6. Alterações por arquivo
 
 | Arquivo | Mudança |
 |---------|---------|
-| Nova migration | Tabela `candidate_scores` |
-| `supabase/functions/score-candidate-job/index.ts` | Nova edge function com prompt de scoring |
-| `src/pages/app/Pipeline.tsx` | Badge de score no card, botão avaliar |
-| `src/pages/app/TalentProfile.tsx` | Score por candidatura, botão calcular |
-| `src/pages/app/JobDetail.tsx` | Seção ranking de candidatos |
-| `src/integrations/supabase/types.ts` | Atualizado automaticamente |
+| Nova migration | Tabelas `screening_questions`, `screening_answers` + coluna `score_weights` em jobs |
+| `src/pages/app/JobCreate.tsx` | Seções de perguntas de triagem e pesos do Fit Score |
+| `src/components/pipeline/AddCandidateModal.tsx` | Passo 2 com formulário de triagem |
+| `supabase/functions/score-candidate-job/index.ts` | Respostas no prompt + score ponderado |
+| `src/pages/app/Pipeline.tsx` | Indicador de triagem no card |
+| `src/pages/app/TalentProfile.tsx` | Exibir respostas de triagem por candidatura |
+| `src/pages/app/JobDetail.tsx` | Exibir pesos e perguntas configuradas |
 
 ### Resultado
-Cada candidato em uma vaga terá um **fit score de 0-100** com análise detalhada por critérios, visível no pipeline, no perfil e no ranking da vaga — permitindo decisões de contratação baseadas em dados.
+O recrutador configura perguntas de triagem e pesos por critério ao criar a vaga. O candidato responde ao se candidatar. O Fit Score usa tudo — respostas, perfil, tags e pesos — para gerar uma pontuação ponderada e precisa, dando controle total ao recrutador sobre o que importa mais para cada vaga.
 
