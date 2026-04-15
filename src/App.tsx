@@ -16,9 +16,12 @@ import PlaceholderPage from "./pages/app/PlaceholderPage";
 import JobsList from "./pages/app/JobsList";
 import JobCreate from "./pages/app/JobCreate";
 import JobDetail from "./pages/app/JobDetail";
+import JobEdit from "./pages/app/JobEdit";
 import Pipeline from "./pages/app/Pipeline";
 import TalentList from "./pages/app/TalentList";
 import TalentProfile from "./pages/app/TalentProfile";
+import Analytics from "./pages/app/Analytics";
+import PublicApplication from "./pages/app/PublicApplication";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,19 +35,21 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/candidato" element={<CandidatoPlaceholder />} />
+      <Route path="/vaga/:id/candidatar" element={<PublicApplication />} />
 
       <Route path="/app" element={<AppLayout />}>
         <Route index element={<Painel />} />
         <Route path="vagas" element={<JobsList />} />
         <Route path="vagas/nova" element={<JobCreate />} />
         <Route path="vagas/:id" element={<JobDetail />} />
+        <Route path="vagas/:id/editar" element={<JobEdit />} />
         <Route path="vagas/:id/pipeline" element={<Pipeline />} />
         <Route path="talentos" element={<TalentList />} />
         <Route path="talentos/:id" element={<TalentProfile />} />
         <Route path="mensagens" element={<PlaceholderPage title="Mensagens" description="Comunique-se com candidatos e equipe." />} />
         <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
         <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
-        <Route path="analytics" element={<PlaceholderPage title="Analytics" description="Relatórios e métricas de recrutamento." />} />
+        <Route path="analytics" element={<Analytics />} />
         <Route path="equipe" element={<PlaceholderPage title="Equipe" description="Gerencie membros e permissões." />} />
         <Route path="requisicoes" element={<PlaceholderPage title="Requisições" description="Aprovações e fluxos de requisição de vagas." />} />
         <Route path="templates" element={<PlaceholderPage title="Templates" description="Modelos de vagas e comunicações." />} />
