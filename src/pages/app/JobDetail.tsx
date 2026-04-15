@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy } from "lucide-react";
+import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 
 const statusLabels: Record<string, string> = {
   open: "Aberta",
@@ -24,6 +25,20 @@ export default function JobDetail() {
     queryKey: ["job", id],
     queryFn: async () => {
       const { data, error } = await supabase.from("jobs").select("*").eq("id", id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const { data: ranking } = useQuery({
+    queryKey: ["job-ranking", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("candidate_scores")
+        .select("*, candidates(name, email)")
+        .eq("job_id", id!)
+        .order("overall_score", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -117,6 +132,28 @@ export default function JobDetail() {
           ))}
         </div>
       </div>
+      {/* Ranking */}
+      {ranking && ranking.length > 0 && (
+        <div>
+          <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Trophy className="h-5 w-5 text-primary" /> Ranking de Candidatos
+          </h2>
+          <div className="space-y-2">
+            {ranking.map((r: any, idx: number) => (
+              <div key={r.id} className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                  {idx + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">{r.candidates?.name || "Candidato"}</p>
+                  <p className="text-xs text-muted-foreground">{r.ai_summary}</p>
+                </div>
+                <FitScoreBadge score={r.overall_score} candidateId={r.candidate_id} jobId={id!} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
