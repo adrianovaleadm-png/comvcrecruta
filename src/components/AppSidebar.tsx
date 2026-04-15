@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquare, Building2,
-  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X
+  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch
 } from "lucide-react";
 import { useState } from "react";
 
@@ -22,6 +22,7 @@ const sections: NavSection[] = [
     items: [
       { label: "Painel", icon: LayoutDashboard, path: "/app" },
       { label: "Hub de Vagas", icon: Briefcase, path: "/app/vagas" },
+      { label: "Banco de Talentos", icon: UserSearch, path: "/app/talentos" },
     ],
   },
   {
