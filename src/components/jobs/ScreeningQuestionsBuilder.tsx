@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface ScreeningQuestion {
   question: string;
@@ -16,6 +18,8 @@ export interface ScreeningQuestion {
 interface Props {
   questions: ScreeningQuestion[];
   onChange: (questions: ScreeningQuestion[]) => void;
+  jobTitle?: string;
+  jobDescription?: string;
 }
 
 const SUGGESTED_QUESTIONS: ScreeningQuestion[] = [
@@ -24,8 +28,37 @@ const SUGGESTED_QUESTIONS: ScreeningQuestion[] = [
   { question: "Descreva sua experiência relevante para esta vaga.", type: "text", options: [], required: true },
 ];
 
-export default function ScreeningQuestionsBuilder({ questions, onChange }: Props) {
+export default function ScreeningQuestionsBuilder({ questions, onChange, jobTitle, jobDescription }: Props) {
   const [newOption, setNewOption] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!jobTitle?.trim()) {
+      toast.error("Preencha o título da vaga antes de gerar perguntas com IA.");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-screening-questions", {
+        body: { title: jobTitle, description: jobDescription },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const generated: ScreeningQuestion[] = (data.questions || []).map((q: any) => ({
+        question: q.question || "",
+        type: q.type === "choice" || q.type === "yes_no" ? q.type : "text",
+        options: Array.isArray(q.options) ? q.options : [],
+        required: q.required !== false,
+      }));
+      onChange([...questions, ...generated]);
+      toast.success(`${generated.length} perguntas geradas com IA!`);
+    } catch (e: any) {
+      console.error("AI screening generation error:", e);
+      toast.error(e?.message || "Erro ao gerar perguntas. Tente novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const add = () => {
     onChange([...questions, { question: "", type: "text", options: [], required: true }]);
@@ -66,6 +99,10 @@ export default function ScreeningQuestionsBuilder({ questions, onChange }: Props
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Perguntas de Triagem</h3>
         <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={generateWithAI} disabled={isGenerating} className="gap-1 text-xs">
+            <Sparkles className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} />
+            {isGenerating ? "Gerando…" : "Gerar com IA"}
+          </Button>
           <Button type="button" variant="outline" size="sm" onClick={addSuggested} className="text-xs">
             Sugeridas
           </Button>

@@ -276,7 +276,7 @@ export default function JobCreate() {
 
           {/* Screening Questions */}
           <div className="rounded-lg border border-border bg-card p-4">
-            <ScreeningQuestionsBuilder questions={screeningQuestions} onChange={setScreeningQuestions} />
+            <ScreeningQuestionsBuilder questions={screeningQuestions} onChange={setScreeningQuestions} jobTitle={form.watch("title")} jobDescription={form.watch("description")} />
           </div>
 
           {/* Score Weights */}
