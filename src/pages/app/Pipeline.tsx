@@ -304,9 +304,16 @@ export default function Pipeline() {
                         </div>
                       )}
                       <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(app.created_at).toLocaleDateString("pt-BR")}
+                          </div>
+                          {hasScreeningAnswers(app.id) && (
+                            <span title="Triagem respondida" className="flex items-center text-primary">
+                              <ClipboardCheck className="h-3.5 w-3.5" />
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-1.5">
                           <FitScoreBadge
