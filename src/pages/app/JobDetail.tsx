@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal } from "lucide-react";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 
 const statusLabels: Record<string, string> = {
@@ -58,6 +58,29 @@ export default function JobDetail() {
     },
     enabled: !!id,
   });
+
+  const { data: screeningQuestions } = useQuery({
+    queryKey: ["screening-questions", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("screening_questions")
+        .select("*")
+        .eq("job_id", id!)
+        .order("order_index", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const WEIGHT_LABELS: Record<string, string> = {
+    experiencia: "Experiência",
+    habilidades_tecnicas: "Hab. Técnicas",
+    localizacao: "Localização",
+    senioridade: "Senioridade",
+    soft_skills: "Soft Skills",
+    triagem: "Triagem",
+  };
 
   if (jobLoading) {
     return <div className="py-12 text-center text-muted-foreground">Carregando...</div>;
