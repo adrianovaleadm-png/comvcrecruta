@@ -161,6 +161,11 @@ export default function JobDetail() {
             <Kanban className="h-4 w-4" /> Ver Pipeline
           </Link>
         </Button>
+        <Button variant="outline" asChild className="gap-2">
+          <Link to={`/app/vagas/${id}/editar`}>
+            <SlidersHorizontal className="h-4 w-4" /> Editar Vaga
+          </Link>
+        </Button>
       </div>
 
       {/* Extra info cards */}
