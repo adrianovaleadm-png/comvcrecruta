@@ -231,9 +231,25 @@ export default function JobCreate() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Nova Vaga</h1>
           <p className="text-muted-foreground">Preencha os dados da vaga.</p>
+        </div>
+        <div className="flex gap-2">
+          {templates && templates.length > 0 && (
+            <Select onValueChange={(val) => { const t = templates.find((t: any) => t.id === val); if (t) loadTemplate(t); }}>
+              <SelectTrigger className="w-48 h-9">
+                <BookOpen className="h-4 w-4 mr-1" />
+                <SelectValue placeholder="Usar template" />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={saveAsTemplate} disabled={savingTemplate} className="gap-1">
+            <BookmarkPlus className="h-4 w-4" /> {savingTemplate ? "..." : "Salvar Template"}
+          </Button>
         </div>
       </div>
 
