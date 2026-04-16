@@ -46,10 +46,10 @@ export default function Analytics() {
           <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
           <p className="text-sm text-muted-foreground">Métricas e conversão do funil de recrutamento.</p>
         </div>
-        <Select value={jobId} onValueChange={setJobId}>
+      <Select value={jobId || "all"} onValueChange={(v) => setJobId(v === "all" ? "" : v)}>
           <SelectTrigger className="w-64"><SelectValue placeholder="Todas as vagas" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as vagas</SelectItem>
+            <SelectItem value="all">Todas as vagas</SelectItem>
             {jobs?.map((j) => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}
           </SelectContent>
         </Select>
