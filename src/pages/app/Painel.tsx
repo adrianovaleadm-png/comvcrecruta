@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Briefcase, Users, BarChart3, TrendingUp, Clock, AlertTriangle, Activity } from "lucide-react";
+import { Briefcase, Users, BarChart3, TrendingUp, Clock, AlertTriangle } from "lucide-react";
+import ActivityFeed from "@/components/activity/ActivityFeed";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardData {
@@ -127,39 +128,7 @@ export default function Painel() {
         </div>
 
         {/* Recent Activity */}
-        <div className="rounded-lg border border-border bg-card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-4 h-4 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-card-foreground">Atividade Recente</h2>
-          </div>
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <Skeleton className="h-2 w-2 mt-2 rounded-full shrink-0" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : !data?.recentActivity || data.recentActivity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma atividade registrada ainda.</p>
-          ) : (
-            <div className="space-y-3">
-              {data.recentActivity.map((ev, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="h-2 w-2 mt-2 rounded-full bg-primary shrink-0" />
-                  <div>
-                    <p className="text-sm text-card-foreground">{ev.message}</p>
-                    <p className="text-xs text-muted-foreground">{relativeTime(ev.created_at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <ActivityFeed limit={10} />
       </div>
     </div>
   );

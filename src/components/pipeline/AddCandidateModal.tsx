@@ -168,6 +168,21 @@ export default function AddCandidateModal({ open, onClose, jobId, stages }: Prop
 
       toast.success("Candidato adicionado ao pipeline!");
       queryClient.invalidateQueries({ queryKey: ["pipeline-applications", jobId] });
+
+      // Fire-and-forget: auto-score candidate
+      toast.info("Calculando Fit Score...");
+      supabase.functions.invoke("score-candidate-job", {
+        body: { candidate_id: candidateId, job_id: jobId },
+      }).then(({ error: scoreErr }) => {
+        if (scoreErr) {
+          console.error("Auto-score error:", scoreErr);
+        } else {
+          queryClient.invalidateQueries({ queryKey: ["pipeline-scores", jobId] });
+          queryClient.invalidateQueries({ queryKey: ["job-ranking", jobId] });
+          toast.success("Fit Score calculado!");
+        }
+      });
+
       onClose();
     } catch (err: any) {
       toast.error(err.message || "Erro ao adicionar candidato.");

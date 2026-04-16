@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef } from "react";
-import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ export default function TalentProfile() {
   const [addingTag, setAddingTag] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [parsing, setParsing] = useState(false);
 
   const { data: candidate, isLoading } = useQuery({
     queryKey: ["talent", id],
@@ -207,8 +208,49 @@ export default function TalentProfile() {
       toast.error(err.message || "Erro no upload.");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleParseResume = async (fileUrl: string) => {
+    setParsing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-resume", {
+        body: { file_url: fileUrl },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // Auto-fill form fields
+      if (data.name || data.email || data.city || data.summary) {
+        setForm({
+          name: data.name || form.name,
+          email: data.email || form.email,
+          phone: data.phone || form.phone,
+          city: data.city || form.city,
+          linkedin_url: data.linkedin_url || form.linkedin_url,
+          summary: data.summary || form.summary,
+        });
+        setEditing(true);
+        toast.success("Dados extraídos do currículo!");
+
+        // Auto-add skills as tags
+        if (data.skills?.length > 0) {
+          for (const skill of data.skills.slice(0, 10)) {
+            try {
+              const { data: existing } = await supabase.from("tags").select("id").eq("name", skill).maybeSingle();
+              const tagId = existing?.id || (await supabase.from("tags").insert({ name: skill }).select("id").single()).data?.id;
+              if (tagId) await supabase.from("candidate_tags").insert({ candidate_id: id!, tag_id: tagId }).then(() => {});
+            } catch {}
+          }
+          queryClient.invalidateQueries({ queryKey: ["talent-tags", id] });
+        }
+      } else {
+        toast.info("Não foi possível extrair dados deste arquivo.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao analisar currículo.");
+    } finally { setParsing(false); }
   };
 
   if (isLoading) {
@@ -382,17 +424,16 @@ export default function TalentProfile() {
             </Button>
             <div className="space-y-2">
               {files?.map((f: any) => (
-                <a
-                  key={f.id}
-                  href={f.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1 truncate">{f.name || "Arquivo"}</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                </a>
+                <div key={f.id} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center gap-2 text-foreground hover:text-primary transition-colors">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 truncate">{f.name || "Arquivo"}</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" disabled={parsing} onClick={() => handleParseResume(f.url)}>
+                    <Sparkles className={`h-3 w-3 ${parsing ? "animate-spin" : ""}`} /> {parsing ? "..." : "Extrair"}
+                  </Button>
+                </div>
               ))}
               {(!files || files.length === 0) && <p className="text-xs text-muted-foreground">Nenhum arquivo enviado.</p>}
             </div>

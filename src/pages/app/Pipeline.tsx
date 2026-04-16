@@ -2,14 +2,16 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useRef } from "react";
-import { ArrowLeft, Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import AddCandidateModal from "@/components/pipeline/AddCandidateModal";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
+import CandidateCompare from "@/components/pipeline/CandidateCompare";
 
 interface Stage {
   id: string;
@@ -43,6 +45,8 @@ export default function Pipeline() {
   const [modalOpen, setModalOpen] = useState(false);
   const [draggedApp, setDraggedApp] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearchChange = useCallback((value: string) => {
@@ -228,9 +232,16 @@ export default function Pipeline() {
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
-        <Button onClick={() => setModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Adicionar candidato
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setModalOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Adicionar candidato
+          </Button>
+          {selectedForCompare.length >= 2 && (
+            <Button variant="outline" onClick={() => setCompareOpen(true)} className="gap-2">
+              <Scale className="h-4 w-4" /> Comparar ({selectedForCompare.length})
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state */}
@@ -286,6 +297,17 @@ export default function Pipeline() {
                       }`}
                     >
                       <div className="mb-2 flex items-center gap-2">
+                        <Checkbox
+                          checked={!!app.candidate_id && selectedForCompare.includes(app.candidate_id)}
+                          onCheckedChange={(checked) => {
+                            if (!app.candidate_id) return;
+                            setSelectedForCompare((prev) =>
+                              checked ? [...prev.filter((id) => id !== app.candidate_id), app.candidate_id!].slice(0, 3) : prev.filter((id) => id !== app.candidate_id)
+                            );
+                          }}
+                          className="h-3.5 w-3.5"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground truncate">
                           {app.candidates?.name || "Candidato"}
@@ -350,6 +372,12 @@ export default function Pipeline() {
         onClose={() => setModalOpen(false)}
         jobId={id!}
         stages={stages || []}
+      />
+      <CandidateCompare
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        candidateIds={selectedForCompare}
+        jobId={id!}
       />
     </div>
   );
