@@ -424,17 +424,16 @@ export default function TalentProfile() {
             </Button>
             <div className="space-y-2">
               {files?.map((f: any) => (
-                <a
-                  key={f.id}
-                  href={f.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors"
-                >
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1 truncate">{f.name || "Arquivo"}</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                </a>
+                <div key={f.id} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center gap-2 text-foreground hover:text-primary transition-colors">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 truncate">{f.name || "Arquivo"}</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+                  </a>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" disabled={parsing} onClick={() => handleParseResume(f.url)}>
+                    <Sparkles className={`h-3 w-3 ${parsing ? "animate-spin" : ""}`} /> {parsing ? "..." : "Extrair"}
+                  </Button>
+                </div>
               ))}
               {(!files || files.length === 0) && <p className="text-xs text-muted-foreground">Nenhum arquivo enviado.</p>}
             </div>
