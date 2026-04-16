@@ -11,9 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles, RefreshCw, CalendarIcon, X } from "lucide-react";
+import { ArrowLeft, Sparkles, RefreshCw, CalendarIcon, X, BookmarkPlus, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,47 @@ export default function JobCreate() {
   const [deadline, setDeadline] = useState<Date | undefined>();
   const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  const { data: templates } = useQuery({
+    queryKey: ["job-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("job_templates").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const loadTemplate = (template: any) => {
+    form.reset({
+      title: template.title || "", description: template.description || "",
+      location: "", type: "CLT", status: "open",
+      seniority: template.seniority || "", work_model: template.work_model || "",
+      department: template.department || "", salary_min: "", salary_max: "", headcount: "1",
+    });
+    setScreeningQuestions(template.screening_questions || []);
+    setScoreWeights(template.score_weights || DEFAULT_WEIGHTS);
+    setRequiredSkills(template.required_skills || []);
+    toast.success("Template carregado!");
+  };
+
+  const saveAsTemplate = async () => {
+    const values = form.getValues();
+    if (!values.title.trim()) { toast.error("Preencha o título."); return; }
+    setSavingTemplate(true);
+    try {
+      const { error } = await supabase.from("job_templates").insert({
+        title: values.title, description: values.description || null,
+        seniority: values.seniority || null, work_model: values.work_model || null,
+        department: values.department || null,
+        required_skills: requiredSkills.length > 0 ? requiredSkills : null,
+        screening_questions: screeningQuestions as any, score_weights: scoreWeights as any,
+      } as any);
+      if (error) throw error;
+      toast.success("Template salvo!");
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar template."); }
+    finally { setSavingTemplate(false); }
+  };
 
   const form = useForm<JobFormValues>({
     defaultValues: {
