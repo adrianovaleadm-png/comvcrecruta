@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Briefcase } from "lucide-react";
+import { Plus, Search, Briefcase, Link2 } from "lucide-react";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   open: "bg-success/10 text-success border-success/30",
@@ -102,6 +103,7 @@ export default function JobsList() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Criada em</TableHead>
+                <TableHead className="text-right">Link público</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -121,6 +123,25 @@ export default function JobsList() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(job.created_at).toLocaleDateString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {job.status === "open" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const url = `${window.location.origin}/vaga/${job.id}/candidatar`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Link público copiado!", { description: url });
+                        }}
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
