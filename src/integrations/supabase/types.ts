@@ -241,51 +241,84 @@ export type Database = {
       }
       companies: {
         Row: {
+          ambiente_trabalho: string | null
+          beneficios: string[] | null
           cnpj: string
           created_at: string
           descricao: string | null
+          diferenciais: string[] | null
           endereco: string | null
           id: string
+          instagram_url: string | null
+          linkedin_url: string | null
           logo_url: string | null
+          missao: string | null
+          modelo_trabalho: string | null
           nome_fantasia: string
+          politicas_dei: string | null
+          proposito: string | null
           razao_social: string
           setor: string | null
           status_onboarding: string
           tamanho: string | null
           telefone_comercial: string | null
           updated_at: string
+          valores: string | null
+          visao: string | null
           website: string | null
         }
         Insert: {
+          ambiente_trabalho?: string | null
+          beneficios?: string[] | null
           cnpj: string
           created_at?: string
           descricao?: string | null
+          diferenciais?: string[] | null
           endereco?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
+          missao?: string | null
+          modelo_trabalho?: string | null
           nome_fantasia: string
+          politicas_dei?: string | null
+          proposito?: string | null
           razao_social: string
           setor?: string | null
           status_onboarding?: string
           tamanho?: string | null
           telefone_comercial?: string | null
           updated_at?: string
+          valores?: string | null
+          visao?: string | null
           website?: string | null
         }
         Update: {
+          ambiente_trabalho?: string | null
+          beneficios?: string[] | null
           cnpj?: string
           created_at?: string
           descricao?: string | null
+          diferenciais?: string[] | null
           endereco?: string | null
           id?: string
+          instagram_url?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
+          missao?: string | null
+          modelo_trabalho?: string | null
           nome_fantasia?: string
+          politicas_dei?: string | null
+          proposito?: string | null
           razao_social?: string
           setor?: string | null
           status_onboarding?: string
           tamanho?: string | null
           telefone_comercial?: string | null
           updated_at?: string
+          valores?: string | null
+          visao?: string | null
           website?: string | null
         }
         Relationships: []

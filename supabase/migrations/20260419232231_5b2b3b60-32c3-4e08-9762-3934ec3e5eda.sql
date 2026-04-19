@@ -1,0 +1,12 @@
+ALTER TABLE public.companies
+  ADD COLUMN IF NOT EXISTS missao TEXT,
+  ADD COLUMN IF NOT EXISTS visao TEXT,
+  ADD COLUMN IF NOT EXISTS valores TEXT,
+  ADD COLUMN IF NOT EXISTS proposito TEXT,
+  ADD COLUMN IF NOT EXISTS ambiente_trabalho TEXT,
+  ADD COLUMN IF NOT EXISTS beneficios TEXT[] DEFAULT '{}'::text[],
+  ADD COLUMN IF NOT EXISTS diferenciais TEXT[] DEFAULT '{}'::text[],
+  ADD COLUMN IF NOT EXISTS politicas_dei TEXT,
+  ADD COLUMN IF NOT EXISTS modelo_trabalho TEXT,
+  ADD COLUMN IF NOT EXISTS linkedin_url TEXT,
+  ADD COLUMN IF NOT EXISTS instagram_url TEXT;

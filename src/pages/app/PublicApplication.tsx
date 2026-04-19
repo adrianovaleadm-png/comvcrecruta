@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Briefcase, MapPin, GraduationCap, Monitor, CheckCircle } from "lucide-react";
+import { Briefcase, MapPin, GraduationCap, Monitor, CheckCircle, Building2, Heart, Gift, Linkedin, Instagram, Globe } from "lucide-react";
 
 const seniorityLabels: Record<string, string> = { junior: "Júnior", pleno: "Pleno", senior: "Sênior", specialist: "Especialista", lead: "Liderança" };
 const workModelLabels: Record<string, string> = { presencial: "Presencial", hibrido: "Híbrido", remoto: "Remoto" };
@@ -52,6 +52,14 @@ export default function PublicApplication() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: company } = useQuery({
+    queryKey: ["public-company"],
+    queryFn: async () => {
+      const { data } = await supabase.from("companies").select("*").limit(1).maybeSingle();
+      return data;
+    },
   });
 
   const handleSubmit = async () => {
@@ -121,6 +129,8 @@ export default function PublicApplication() {
   }
 
   const jobAny = job as any;
+  const co = company as any;
+  const valoresList = co?.valores ? String(co.valores).split("\n").map((v: string) => v.trim()).filter(Boolean) : [];
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -141,6 +151,68 @@ export default function PublicApplication() {
           )}
           {job.description && <p className="whitespace-pre-wrap text-sm text-muted-foreground mt-3">{job.description}</p>}
         </div>
+
+        {/* Sobre a Empresa */}
+        {co && (co.descricao || co.missao || co.visao || valoresList.length > 0 || co.proposito || co.beneficios?.length > 0 || co.diferenciais?.length > 0) && (
+          <div className="rounded-lg border border-border bg-card p-6 space-y-5">
+            <div className="flex items-center gap-3">
+              {co.logo_url ? (
+                <img src={co.logo_url} alt={co.nome_fantasia} className="w-12 h-12 rounded-lg object-cover border border-border" />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center"><Building2 className="h-5 w-5 text-muted-foreground" /></div>
+              )}
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{co.nome_fantasia}</h2>
+                {co.setor && <p className="text-xs text-muted-foreground">{co.setor}</p>}
+              </div>
+            </div>
+
+            {co.descricao && <p className="text-sm text-muted-foreground">{co.descricao}</p>}
+
+            {(co.proposito || co.missao || co.visao || valoresList.length > 0) && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground"><Heart className="h-4 w-4 text-primary" /> Nossa cultura</div>
+                {co.proposito && <div><p className="text-xs font-medium text-muted-foreground uppercase mb-1">Propósito</p><p className="text-sm text-foreground">{co.proposito}</p></div>}
+                {co.missao && <div><p className="text-xs font-medium text-muted-foreground uppercase mb-1">Missão</p><p className="text-sm text-foreground">{co.missao}</p></div>}
+                {co.visao && <div><p className="text-xs font-medium text-muted-foreground uppercase mb-1">Visão</p><p className="text-sm text-foreground">{co.visao}</p></div>}
+                {valoresList.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase mb-1.5">Valores</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {valoresList.map((v: string) => <Badge key={v} variant="outline">{v}</Badge>)}
+                    </div>
+                  </div>
+                )}
+                {co.ambiente_trabalho && <div><p className="text-xs font-medium text-muted-foreground uppercase mb-1">Ambiente</p><p className="text-sm text-foreground">{co.ambiente_trabalho}</p></div>}
+                {co.diferenciais?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase mb-1.5">Diferenciais</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {co.diferenciais.map((d: string) => <Badge key={d} variant="secondary">{d}</Badge>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {co.beneficios?.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2"><Gift className="h-4 w-4 text-primary" /> Benefícios</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {co.beneficios.map((b: string) => <Badge key={b} variant="outline">{b}</Badge>)}
+                </div>
+              </div>
+            )}
+
+            {(co.website || co.linkedin_url || co.instagram_url) && (
+              <div className="pt-2 border-t border-border flex flex-wrap gap-3 text-sm">
+                {co.website && <a href={co.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Globe className="h-3.5 w-3.5" /> Website</a>}
+                {co.linkedin_url && <a href={co.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Linkedin className="h-3.5 w-3.5" /> LinkedIn</a>}
+                {co.instagram_url && <a href={co.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary hover:underline"><Instagram className="h-3.5 w-3.5" /> Instagram</a>}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Application Form */}
         <div className="rounded-lg border border-border bg-card p-6 space-y-4">

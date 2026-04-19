@@ -21,6 +21,7 @@ import Pipeline from "./pages/app/Pipeline";
 import TalentList from "./pages/app/TalentList";
 import TalentProfile from "./pages/app/TalentProfile";
 import Analytics from "./pages/app/Analytics";
+import CompanyProfile from "./pages/app/CompanyProfile";
 import PublicApplication from "./pages/app/PublicApplication";
 import NotFound from "./pages/NotFound";
 
@@ -50,6 +51,7 @@ function AppRoutes() {
         <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
         <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
         <Route path="analytics" element={<Analytics />} />
+        <Route path="empresa" element={<CompanyProfile />} />
         <Route path="equipe" element={<PlaceholderPage title="Equipe" description="Gerencie membros e permissões." />} />
         <Route path="requisicoes" element={<PlaceholderPage title="Requisições" description="Aprovações e fluxos de requisição de vagas." />} />
         <Route path="templates" element={<PlaceholderPage title="Templates" description="Modelos de vagas e comunicações." />} />
