@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock, Link2, ExternalLink } from "lucide-react";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   open: "Aberta",
