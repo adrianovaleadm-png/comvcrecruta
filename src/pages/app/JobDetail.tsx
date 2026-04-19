@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock } from "lucide-react";
+import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock, Link2, ExternalLink } from "lucide-react";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
+import { toast } from "sonner";
 
 const statusLabels: Record<string, string> = {
   open: "Aberta",
@@ -155,7 +156,7 @@ export default function JobDetail() {
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button asChild className="gap-2">
           <Link to={`/app/vagas/${id}/pipeline`}>
             <Kanban className="h-4 w-4" /> Ver Pipeline
@@ -166,6 +167,26 @@ export default function JobDetail() {
             <SlidersHorizontal className="h-4 w-4" /> Editar Vaga
           </Link>
         </Button>
+        {job.status === "open" && (
+          <>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                const url = `${window.location.origin}/vaga/${id}/candidatar`;
+                navigator.clipboard.writeText(url);
+                toast.success("Link público copiado!", { description: url });
+              }}
+            >
+              <Link2 className="h-4 w-4" /> Copiar link público
+            </Button>
+            <Button variant="outline" asChild className="gap-2">
+              <a href={`/vaga/${id}/candidatar`} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" /> Abrir página de candidatura
+              </a>
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Extra info cards */}
