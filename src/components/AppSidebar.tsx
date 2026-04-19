@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquare, Building2,
-  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch
+  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +47,7 @@ const sections: NavSection[] = [
   {
     title: "ADMINISTRADOR",
     items: [
+      { label: "Empresa", icon: Heart, path: "/app/empresa" },
       { label: "Equipe", icon: Users, path: "/app/equipe" },
       { label: "Requisições", icon: FileText, path: "/app/requisicoes" },
       { label: "Templates", icon: FileText, path: "/app/templates" },
