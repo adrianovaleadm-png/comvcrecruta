@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import AddCandidateModal from "@/components/pipeline/AddCandidateModal";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 import CandidateCompare from "@/components/pipeline/CandidateCompare";
+import CandidateDrawer from "@/components/pipeline/CandidateDrawer";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -57,6 +58,7 @@ export default function Pipeline() {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ appId: string; newStageId: string; stageName: string; notify: boolean } | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearchChange = useCallback((value: string) => {
@@ -385,7 +387,8 @@ export default function Pipeline() {
                       draggable
                       onDragStart={() => handleDragStart(app.id)}
                       onDragEnd={handleDragEnd}
-                      className={`cursor-grab rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${
+                      onClick={() => setSelectedAppId(app.id)}
+                      className={`cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
                         overSla ? "border-warning/50" : "border-border"
                       } ${draggedApp === app.id ? "opacity-50 rotate-1 scale-95" : ""}`}
                     >
@@ -509,6 +512,14 @@ export default function Pipeline() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CandidateDrawer
+        open={!!selectedAppId}
+        onOpenChange={(o) => !o && setSelectedAppId(null)}
+        applicationId={selectedAppId}
+        jobId={id!}
+        stages={stages || []}
+      />
     </div>
   );
 }
