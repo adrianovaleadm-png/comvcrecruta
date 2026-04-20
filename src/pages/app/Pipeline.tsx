@@ -420,6 +420,37 @@ export default function Pipeline() {
         candidateIds={selectedForCompare}
         jobId={id!}
       />
+
+      <Dialog open={!!pendingMove} onOpenChange={(o) => !o && setPendingMove(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover para "{pendingMove?.stageName}"</DialogTitle>
+            <DialogDescription>
+              Você pode notificar o candidato automaticamente por e-mail sobre essa mudança.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+            <Label htmlFor="notify-toggle" className="text-sm">
+              Notificar candidato por e-mail
+            </Label>
+            <Switch
+              id="notify-toggle"
+              checked={pendingMove?.notify ?? false}
+              onCheckedChange={(v) =>
+                setPendingMove((p) => (p ? { ...p, notify: v } : p))
+              }
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => confirmMove(false)}>
+              Mover sem notificar
+            </Button>
+            <Button onClick={() => confirmMove(pendingMove?.notify ?? false)}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
