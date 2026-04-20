@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useRef } from "react";
-import { ArrowLeft, Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck, Scale } from "lucide-react";
+import { Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck, Scale, Info, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +15,18 @@ import CandidateCompare from "@/components/pipeline/CandidateCompare";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Stage {
   id: string;
   name: string;
   order_index: number;
   job_id: string;
+  objetivo: string | null;
+  acoes: string | null;
+  criterios_avanco: string | null;
+  sla_dias: number | null;
+  responsavel_padrao: string | null;
 }
 
 interface Candidate {
