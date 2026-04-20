@@ -320,7 +320,50 @@ export default function Pipeline() {
               >
                 {/* Column header */}
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                  <h3 className="text-sm font-semibold text-foreground">{stage.name}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold text-foreground">{stage.name}</h3>
+                    {(stage.objetivo || stage.acoes) && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            aria-label="Ver playbook da etapa"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-72 space-y-2 text-xs">
+                          {stage.objetivo && (
+                            <div>
+                              <div className="font-semibold text-foreground">Objetivo</div>
+                              <p className="text-muted-foreground">{stage.objetivo}</p>
+                            </div>
+                          )}
+                          {stage.acoes && (
+                            <div>
+                              <div className="font-semibold text-foreground">Ações do recrutador</div>
+                              <ul className="list-disc pl-4 text-muted-foreground">
+                                {stage.acoes.split("\n").filter(Boolean).map((a, i) => (
+                                  <li key={i}>{a}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {stage.criterios_avanco && (
+                            <div>
+                              <div className="font-semibold text-foreground">Critérios de avanço</div>
+                              <p className="text-muted-foreground">{stage.criterios_avanco}</p>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between border-t border-border pt-2 text-muted-foreground">
+                            {stage.responsavel_padrao && <span>👤 {stage.responsavel_padrao}</span>}
+                            {stage.sla_dias != null && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />SLA: {stage.sla_dias}d</span>}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-xs font-bold text-primary">
                     {stageApps.length}
                   </span>
@@ -333,15 +376,18 @@ export default function Pipeline() {
                       Sem candidatos nesta etapa
                     </p>
                   )}
-                  {stageApps.map((app) => (
+                  {stageApps.map((app) => {
+                    const daysInStage = Math.floor((Date.now() - new Date(app.created_at).getTime()) / 86_400_000);
+                    const overSla = stage.sla_dias != null && daysInStage > stage.sla_dias;
+                    return (
                     <div
                       key={app.id}
                       draggable
                       onDragStart={() => handleDragStart(app.id)}
                       onDragEnd={handleDragEnd}
-                      className={`cursor-grab rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${
-                        draggedApp === app.id ? "opacity-50 rotate-1 scale-95" : ""
-                      }`}
+                      className={`cursor-grab rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${
+                        overSla ? "border-warning/50" : "border-border"
+                      } ${draggedApp === app.id ? "opacity-50 rotate-1 scale-95" : ""}`}
                     >
                       <div className="mb-2 flex items-center gap-2">
                         <Checkbox
