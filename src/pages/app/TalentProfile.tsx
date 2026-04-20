@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef } from "react";
-import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck, Sparkles, Mail, ArrowRightLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,6 +104,31 @@ export default function TalentProfile() {
     },
     enabled: !!applications && applications.length > 0,
   });
+
+  const appIds = applications?.map((a: any) => a.id) || [];
+
+  const { data: commEvents } = useQuery({
+    queryKey: ["talent-communication", id, appIds.join(",")],
+    queryFn: async () => {
+      if (appIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("activity_events")
+        .select("*")
+        .eq("entity_type", "application")
+        .in("entity_id", appIds)
+        .in("type", ["email_sent", "email_logged", "email_skipped", "stage_changed", "status_changed"])
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: appIds.length > 0,
+  });
+
+  const jobByAppId = (appId: string) => {
+    const a = applications?.find((x: any) => x.id === appId);
+    return a?.jobs?.title || "—";
+  };
 
   const getAnswersForApp = (appId: string) =>
     screeningAnswers?.filter((a: any) => a.application_id === appId) || [];
