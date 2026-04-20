@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import ScreeningQuestionsBuilder, { type ScreeningQuestion } from "@/components/jobs/ScreeningQuestionsBuilder";
 import ScoreWeightsConfig, { type ScoreWeights } from "@/components/jobs/ScoreWeightsConfig";
 import StageTemplatesEditor from "@/components/jobs/StageTemplatesEditor";
+import StageProcessEditor from "@/components/jobs/StageProcessEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface JobFormValues {
@@ -181,8 +182,9 @@ export default function JobEdit() {
       </div>
 
       <Tabs defaultValue="dados" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="dados">Dados da vaga</TabsTrigger>
+          <TabsTrigger value="processo">Processo</TabsTrigger>
           <TabsTrigger value="comunicacao">Comunicação</TabsTrigger>
         </TabsList>
 
@@ -308,6 +310,16 @@ export default function JobEdit() {
               </div>
             </form>
           </Form>
+        </TabsContent>
+
+        <TabsContent value="processo" className="mt-6">
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-foreground">Playbook por etapa</h3>
+            <p className="text-sm text-muted-foreground">
+              Defina o objetivo, ações do recrutador, critérios de avanço e SLA de cada etapa do pipeline.
+            </p>
+          </div>
+          <StageProcessEditor jobId={id!} />
         </TabsContent>
 
         <TabsContent value="comunicacao" className="mt-6">
