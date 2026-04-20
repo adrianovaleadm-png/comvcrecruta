@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import AddCandidateModal from "@/components/pipeline/AddCandidateModal";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 import CandidateCompare from "@/components/pipeline/CandidateCompare";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Stage {
   id: string;
@@ -47,6 +50,7 @@ export default function Pipeline() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{ appId: string; newStageId: string; stageName: string; notify: boolean } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearchChange = useCallback((value: string) => {
