@@ -402,9 +402,14 @@ export default function Pipeline() {
                           onClick={(e) => e.stopPropagation()}
                         />
                         <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm font-medium text-foreground truncate">
+                        <span className="text-sm font-medium text-foreground truncate flex-1">
                           {app.candidates?.name || "Candidato"}
                         </span>
+                        {overSla && (
+                          <span title={`Há ${daysInStage}d nesta etapa (SLA: ${stage.sla_dias}d)`} className="flex items-center gap-0.5 rounded-full bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning">
+                            <AlertTriangle className="h-2.5 w-2.5" />{daysInStage}d
+                          </span>
+                        )}
                       </div>
                       {app.candidates?.email && (
                         <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
