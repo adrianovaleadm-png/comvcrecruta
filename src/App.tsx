@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
 import CandidatoPlaceholder from "./pages/CandidatoPlaceholder";
+import Carreiras from "./pages/Carreiras";
 import AppLayout from "./pages/AppLayout";
 import Painel from "./pages/app/Painel";
 import PlaceholderPage from "./pages/app/PlaceholderPage";
@@ -36,6 +37,7 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/candidato" element={<CandidatoPlaceholder />} />
+      <Route path="/carreiras" element={<Carreiras />} />
       <Route path="/vaga/:id/candidatar" element={<PublicApplication />} />
 
       <Route path="/app" element={<AppLayout />}>

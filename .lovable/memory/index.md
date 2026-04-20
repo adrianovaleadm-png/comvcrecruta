@@ -25,3 +25,4 @@ Updated: now
 - [Pipeline Communication](mem://funcionalidades/comunicacao-pipeline) — Stage email templates + dialog on move + edge function (log-only without Resend)
 - [Stage Playbook](mem://funcionalidades/playbook-etapas) — Per-stage objective/actions/SLA, checklist per application, Processo tab in JobEdit
 - [Pipeline Communication](mem://funcionalidades/comunicacao-pipeline) — stage_templates table, send-stage-notification edge function, confirm modal on move, "Comunicação" tab in JobEdit
+- [Drawer + Carreiras + Timeline](mem://funcionalidades/drawer-carreiras-timeline) — Candidate drawer in pipeline (4 tabs), public /carreiras page, communication timeline in TalentProfile

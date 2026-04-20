@@ -41,7 +41,17 @@ Deno.serve(async (req) => {
 
     const candidate = (app as any).candidates;
     const job = (app as any).jobs;
+    const stageRes = await supabase.from("stages").select("name").eq("id", new_stage_id).maybeSingle();
+    const stageName = stageRes.data?.name ?? "—";
+
     if (!candidate?.email) {
+      await supabase.from("activity_events").insert({
+        type: "email_skipped",
+        entity_type: "application",
+        entity_id: application_id,
+        message: `E-mail não enviado: candidato sem endereço (etapa "${stageName}")`,
+        metadata: { stage_name: stageName, reason: "no_email" },
+      });
       return new Response(JSON.stringify({ skipped: true, reason: "Sem e-mail do candidato" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -54,6 +64,13 @@ Deno.serve(async (req) => {
       .eq("stage_id", new_stage_id)
       .maybeSingle();
     if (!tpl) {
+      await supabase.from("activity_events").insert({
+        type: "email_skipped",
+        entity_type: "application",
+        entity_id: application_id,
+        message: `E-mail não enviado: sem template para etapa "${stageName}"`,
+        metadata: { stage_name: stageName, reason: "no_template", to_email: candidate.email },
+      });
       return new Response(JSON.stringify({ skipped: true, reason: "Sem template configurado" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -75,13 +92,19 @@ Deno.serve(async (req) => {
     const assunto = renderTemplate(tpl.assunto, vars);
     const corpo = renderTemplate(tpl.corpo, vars);
 
-    // Modo log-only (sem provedor de e-mail configurado)
+    // Modo log-only (sem provedor de e-mail configurado em produção)
     await supabase.from("activity_events").insert({
-      type: "email_sent",
+      type: "email_logged",
       entity_type: "application",
       entity_id: application_id,
-      message: `E-mail enviado para ${candidate.email}: "${assunto}"`,
-      metadata: { to: candidate.email, subject: assunto, body: corpo, mode: "log-only" },
+      message: `E-mail registrado para ${candidate.email} (etapa "${stageName}"): "${assunto}"`,
+      metadata: {
+        stage_name: stageName,
+        assunto,
+        to_email: candidate.email,
+        body: corpo,
+        mode: "log-only",
+      },
     });
 
     return new Response(
