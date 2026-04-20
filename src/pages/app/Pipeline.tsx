@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import AddCandidateModal from "@/components/pipeline/AddCandidateModal";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 import CandidateCompare from "@/components/pipeline/CandidateCompare";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Stage {
   id: string;
@@ -47,6 +50,7 @@ export default function Pipeline() {
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [pendingMove, setPendingMove] = useState<{ appId: string; newStageId: string; stageName: string; notify: boolean } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearchChange = useCallback((value: string) => {
@@ -120,6 +124,22 @@ export default function Pipeline() {
     enabled: !!applications && applications.length > 0,
   });
 
+  // Stage templates (para saber se o "enviar automático" está ligado)
+  const { data: stageTemplates } = useQuery({
+    queryKey: ["pipeline-stage-templates", id],
+    queryFn: async () => {
+      const stageIds = stages?.map((s) => s.id) || [];
+      if (stageIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("stage_templates")
+        .select("stage_id, enviar_automatico, assunto")
+        .in("stage_id", stageIds);
+      if (error) throw error;
+      return data as { stage_id: string; enviar_automatico: boolean; assunto: string }[];
+    },
+    enabled: !!stages?.length,
+  });
+
   const hasScreeningAnswers = (appId: string) =>
     screeningStatus?.some((s) => s.application_id === appId) || false;
 
@@ -129,12 +149,19 @@ export default function Pipeline() {
   };
 
   const moveApplication = useMutation({
-    mutationFn: async ({ appId, newStageId }: { appId: string; newStageId: string }) => {
+    mutationFn: async ({ appId, newStageId, notify }: { appId: string; newStageId: string; notify: boolean }) => {
       const { error } = await supabase
         .from("applications")
         .update({ stage_id: newStageId })
         .eq("id", appId);
       if (error) throw error;
+      if (notify) {
+        const { error: fnErr } = await supabase.functions.invoke("send-stage-notification", {
+          body: { application_id: appId, new_stage_id: newStageId },
+        });
+        if (fnErr) console.warn("Falha ao notificar candidato:", fnErr);
+      }
+      return { notify };
     },
     onMutate: async ({ appId, newStageId }) => {
       await queryClient.cancelQueries({ queryKey: ["pipeline-applications", id] });
@@ -150,8 +177,8 @@ export default function Pipeline() {
       }
       toast.error("Erro ao mover candidato. Tente novamente.");
     },
-    onSuccess: () => {
-      toast.success("Candidato movido com sucesso!");
+    onSuccess: (res) => {
+      toast.success(res?.notify ? "Candidato movido e notificado!" : "Candidato movido.");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["pipeline-applications", id] });
@@ -172,11 +199,25 @@ export default function Pipeline() {
     if (draggedApp) {
       const app = applications?.find((a) => a.id === draggedApp);
       if (app && app.stage_id !== stageId) {
-        moveApplication.mutate({ appId: draggedApp, newStageId: stageId });
+        const stage = stages?.find((s) => s.id === stageId);
+        const tpl = stageTemplates?.find((t) => t.stage_id === stageId);
+        const defaultNotify = tpl?.enviar_automatico ?? false;
+        setPendingMove({
+          appId: draggedApp,
+          newStageId: stageId,
+          stageName: stage?.name || "nova etapa",
+          notify: defaultNotify,
+        });
       }
     }
     setDraggedApp(null);
     setDragOverStage(null);
+  };
+
+  const confirmMove = (notify: boolean) => {
+    if (!pendingMove) return;
+    moveApplication.mutate({ appId: pendingMove.appId, newStageId: pendingMove.newStageId, notify });
+    setPendingMove(null);
   };
 
   const filteredApps = applications?.filter((app) => {
@@ -379,6 +420,37 @@ export default function Pipeline() {
         candidateIds={selectedForCompare}
         jobId={id!}
       />
+
+      <Dialog open={!!pendingMove} onOpenChange={(o) => !o && setPendingMove(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover para "{pendingMove?.stageName}"</DialogTitle>
+            <DialogDescription>
+              Você pode notificar o candidato automaticamente por e-mail sobre essa mudança.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+            <Label htmlFor="notify-toggle" className="text-sm">
+              Notificar candidato por e-mail
+            </Label>
+            <Switch
+              id="notify-toggle"
+              checked={pendingMove?.notify ?? false}
+              onCheckedChange={(v) =>
+                setPendingMove((p) => (p ? { ...p, notify: v } : p))
+              }
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => confirmMove(false)}>
+              Mover sem notificar
+            </Button>
+            <Button onClick={() => confirmMove(pendingMove?.notify ?? false)}>
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

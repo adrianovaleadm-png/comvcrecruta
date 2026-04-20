@@ -577,6 +577,44 @@ export type Database = {
           },
         ]
       }
+      stage_templates: {
+        Row: {
+          assunto: string
+          corpo: string
+          created_at: string
+          enviar_automatico: boolean
+          id: string
+          stage_id: string
+          updated_at: string
+        }
+        Insert: {
+          assunto: string
+          corpo: string
+          created_at?: string
+          enviar_automatico?: boolean
+          id?: string
+          stage_id: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string
+          corpo?: string
+          created_at?: string
+          enviar_automatico?: boolean
+          id?: string
+          stage_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_templates_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: true
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stages: {
         Row: {
           id: string
@@ -626,6 +664,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      default_template_for_stage: {
+        Args: { _stage_name: string }
+        Returns: {
+          assunto: string
+          corpo: string
+        }[]
+      }
       is_company_admin: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
