@@ -437,6 +437,64 @@ export default function TalentProfile() {
               </div>
             )}
           </div>
+
+          {/* Comunicação */}
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <MessageSquare className="h-4 w-4 text-primary" /> Comunicação & Histórico
+            </h2>
+            {(!commEvents || commEvents.length === 0) ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma comunicação ou movimentação registrada ainda.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {commEvents.map((ev: any) => {
+                  const isEmail = ev.type === "email_sent" || ev.type === "email_logged" || ev.type === "email_skipped";
+                  const Icon = isEmail ? Mail : ArrowRightLeft;
+                  const meta = ev.metadata || {};
+                  return (
+                    <li key={ev.id} className="flex gap-2.5 rounded-md border border-border px-3 py-2.5">
+                      <div className={`mt-0.5 rounded-full p-1.5 ${isEmail ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <Icon className="h-3 w-3" />
+                      </div>
+                      <div className="flex-1 space-y-0.5">
+                        <div className="text-sm text-foreground">{ev.message}</div>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                          <span>{new Date(ev.created_at).toLocaleString("pt-BR")}</span>
+                          <span>·</span>
+                          <span>{jobByAppId(ev.entity_id)}</span>
+                          {meta.stage_name && (
+                            <>
+                              <span>·</span>
+                              <Badge variant="secondary" className="text-[10px]">
+                                {meta.stage_name}
+                              </Badge>
+                            </>
+                          )}
+                          {ev.type === "email_sent" && (
+                            <Badge variant="outline" className="border-success/30 bg-success/10 text-[10px] text-success">
+                              enviado
+                            </Badge>
+                          )}
+                          {ev.type === "email_logged" && (
+                            <Badge variant="outline" className="text-[10px]">
+                              log-only
+                            </Badge>
+                          )}
+                          {ev.type === "email_skipped" && (
+                            <Badge variant="outline" className="border-warning/30 bg-warning/10 text-[10px] text-warning">
+                              não enviado
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Sidebar - Files */}
