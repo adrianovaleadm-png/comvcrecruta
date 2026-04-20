@@ -18,6 +18,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import ScreeningQuestionsBuilder, { type ScreeningQuestion } from "@/components/jobs/ScreeningQuestionsBuilder";
 import ScoreWeightsConfig, { type ScoreWeights } from "@/components/jobs/ScoreWeightsConfig";
+import StageTemplatesEditor from "@/components/jobs/StageTemplatesEditor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface JobFormValues {
   title: string;
@@ -178,127 +180,146 @@ export default function JobEdit() {
         </div>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit((v) => updateJob.mutate(v))} className="space-y-6">
-          <FormField control={form.control} name="title" rules={{ required: "Título é obrigatório" }} render={({ field }) => (
-            <FormItem><FormLabel>Título *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-          )} />
+      <Tabs defaultValue="dados" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="dados">Dados da vaga</TabsTrigger>
+          <TabsTrigger value="comunicacao">Comunicação</TabsTrigger>
+        </TabsList>
 
-          <FormField control={form.control} name="description" render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Descrição</FormLabel>
-                <div className="flex gap-2">
-                  {descriptionValue?.trim() && (
-                    <Button type="button" variant="outline" size="sm" disabled={isGenerating} onClick={() => generateDescription(true)} className="h-7 gap-1 text-xs">
-                      <RefreshCw className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} /> Melhorar
-                    </Button>
-                  )}
-                  <Button type="button" variant="outline" size="sm" disabled={isGenerating} onClick={() => generateDescription(false)} className="h-7 gap-1 text-xs">
-                    <Sparkles className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} /> Gerar com IA
-                  </Button>
+        <TabsContent value="dados" className="mt-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((v) => updateJob.mutate(v))} className="space-y-6">
+              <FormField control={form.control} name="title" rules={{ required: "Título é obrigatório" }} render={({ field }) => (
+                <FormItem><FormLabel>Título *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+
+              <FormField control={form.control} name="description" render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Descrição</FormLabel>
+                    <div className="flex gap-2">
+                      {descriptionValue?.trim() && (
+                        <Button type="button" variant="outline" size="sm" disabled={isGenerating} onClick={() => generateDescription(true)} className="h-7 gap-1 text-xs">
+                          <RefreshCw className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} /> Melhorar
+                        </Button>
+                      )}
+                      <Button type="button" variant="outline" size="sm" disabled={isGenerating} onClick={() => generateDescription(false)} className="h-7 gap-1 text-xs">
+                        <Sparkles className={`h-3 w-3 ${isGenerating ? "animate-spin" : ""}`} /> Gerar com IA
+                      </Button>
+                    </div>
+                  </div>
+                  <FormControl><Textarea rows={10} {...field} /></FormControl><FormMessage />
+                </FormItem>
+              )} />
+
+              <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+                <h3 className="text-sm font-semibold text-foreground">Detalhes</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="location" render={({ field }) => (
+                    <FormItem><FormLabel>Localização</FormLabel><FormControl><Input placeholder="Ex: São Paulo" {...field} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name="type" render={({ field }) => (
+                    <FormItem><FormLabel>Tipo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="CLT">CLT</SelectItem><SelectItem value="PJ">PJ</SelectItem><SelectItem value="Intern">Estágio</SelectItem><SelectItem value="Contract">Contrato</SelectItem></SelectContent>
+                      </Select></FormItem>
+                  )} />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="seniority" render={({ field }) => (
+                    <FormItem><FormLabel>Senioridade</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="junior">Júnior</SelectItem><SelectItem value="pleno">Pleno</SelectItem><SelectItem value="senior">Sênior</SelectItem><SelectItem value="specialist">Especialista</SelectItem><SelectItem value="lead">Liderança</SelectItem></SelectContent>
+                      </Select></FormItem>
+                  )} />
+                  <FormField control={form.control} name="work_model" render={({ field }) => (
+                    <FormItem><FormLabel>Modalidade</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="hibrido">Híbrido</SelectItem><SelectItem value="remoto">Remoto</SelectItem></SelectContent>
+                      </Select></FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="department" render={({ field }) => (
+                    <FormItem><FormLabel>Departamento</FormLabel><FormControl><Input placeholder="Ex: Engenharia" {...field} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name="headcount" render={({ field }) => (
+                    <FormItem><FormLabel>Qtd. de vagas</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="salary_min" render={({ field }) => (
+                    <FormItem><FormLabel>Salário mín. (R$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl></FormItem>
+                  )} />
+                  <FormField control={form.control} name="salary_max" render={({ field }) => (
+                    <FormItem><FormLabel>Salário máx. (R$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium leading-none">Data limite</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className={cn("mt-1.5 w-full justify-start text-left font-normal", !deadline && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {deadline ? format(deadline, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <FormField control={form.control} name="status" render={({ field }) => (
+                  <FormItem><FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent><SelectItem value="open">Aberta</SelectItem><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="closed">Fechada</SelectItem></SelectContent>
+                    </Select></FormItem>
+                )} />
               </div>
-              <FormControl><Textarea rows={10} {...field} /></FormControl><FormMessage />
-            </FormItem>
-          )} />
 
-          <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-            <h3 className="text-sm font-semibold text-foreground">Detalhes</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="location" render={({ field }) => (
-                <FormItem><FormLabel>Localização</FormLabel><FormControl><Input placeholder="Ex: São Paulo" {...field} /></FormControl></FormItem>
-              )} />
-              <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem><FormLabel>Tipo</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="CLT">CLT</SelectItem><SelectItem value="PJ">PJ</SelectItem><SelectItem value="Intern">Estágio</SelectItem><SelectItem value="Contract">Contrato</SelectItem></SelectContent>
-                  </Select></FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="seniority" render={({ field }) => (
-                <FormItem><FormLabel>Senioridade</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="junior">Júnior</SelectItem><SelectItem value="pleno">Pleno</SelectItem><SelectItem value="senior">Sênior</SelectItem><SelectItem value="specialist">Especialista</SelectItem><SelectItem value="lead">Liderança</SelectItem></SelectContent>
-                  </Select></FormItem>
-              )} />
-              <FormField control={form.control} name="work_model" render={({ field }) => (
-                <FormItem><FormLabel>Modalidade</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="presencial">Presencial</SelectItem><SelectItem value="hibrido">Híbrido</SelectItem><SelectItem value="remoto">Remoto</SelectItem></SelectContent>
-                  </Select></FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="department" render={({ field }) => (
-                <FormItem><FormLabel>Departamento</FormLabel><FormControl><Input placeholder="Ex: Engenharia" {...field} /></FormControl></FormItem>
-              )} />
-              <FormField control={form.control} name="headcount" render={({ field }) => (
-                <FormItem><FormLabel>Qtd. de vagas</FormLabel><FormControl><Input type="number" min={1} {...field} /></FormControl></FormItem>
-              )} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="salary_min" render={({ field }) => (
-                <FormItem><FormLabel>Salário mín. (R$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl></FormItem>
-              )} />
-              <FormField control={form.control} name="salary_max" render={({ field }) => (
-                <FormItem><FormLabel>Salário máx. (R$)</FormLabel><FormControl><Input type="number" min={0} {...field} /></FormControl></FormItem>
-              )} />
-            </div>
-            <div>
-              <label className="text-sm font-medium leading-none">Data limite</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button type="button" variant="outline" className={cn("mt-1.5 w-full justify-start text-left font-normal", !deadline && "text-muted-foreground")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {deadline ? format(deadline, "dd/MM/yyyy", { locale: ptBR }) : "Selecione uma data"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={deadline} onSelect={setDeadline} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem><FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="open">Aberta</SelectItem><SelectItem value="draft">Rascunho</SelectItem><SelectItem value="closed">Fechada</SelectItem></SelectContent>
-                </Select></FormItem>
-            )} />
-          </div>
+              <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Habilidades Requeridas</h3>
+                <div className="flex flex-wrap gap-2">
+                  {requiredSkills.map((skill) => (
+                    <Badge key={skill} variant="secondary" className="gap-1 pr-1">
+                      {skill}
+                      <button type="button" onClick={() => setRequiredSkills((p) => p.filter((s) => s !== skill))} className="ml-1 rounded-full hover:bg-muted p-0.5"><X className="h-3 w-3" /></button>
+                    </Badge>
+                  ))}
+                </div>
+                <Input placeholder="Digite e pressione Enter" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={handleAddSkill} />
+              </div>
 
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Habilidades Requeridas</h3>
-            <div className="flex flex-wrap gap-2">
-              {requiredSkills.map((skill) => (
-                <Badge key={skill} variant="secondary" className="gap-1 pr-1">
-                  {skill}
-                  <button type="button" onClick={() => setRequiredSkills((p) => p.filter((s) => s !== skill))} className="ml-1 rounded-full hover:bg-muted p-0.5"><X className="h-3 w-3" /></button>
-                </Badge>
-              ))}
-            </div>
-            <Input placeholder="Digite e pressione Enter" value={skillInput} onChange={(e) => setSkillInput(e.target.value)} onKeyDown={handleAddSkill} />
-          </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <ScreeningQuestionsBuilder questions={screeningQuestions} onChange={setScreeningQuestions} jobTitle={form.watch("title")} jobDescription={form.watch("description")} />
+              </div>
 
-          <div className="rounded-lg border border-border bg-card p-4">
-            <ScreeningQuestionsBuilder questions={screeningQuestions} onChange={setScreeningQuestions} jobTitle={form.watch("title")} jobDescription={form.watch("description")} />
-          </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <ScoreWeightsConfig weights={scoreWeights} onChange={setScoreWeights} />
+              </div>
 
-          <div className="rounded-lg border border-border bg-card p-4">
-            <ScoreWeightsConfig weights={scoreWeights} onChange={setScoreWeights} />
-          </div>
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" disabled={updateJob.isPending} className="gap-2">
+                  <Save className="h-4 w-4" /> {updateJob.isPending ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+                <Button type="button" variant="outline" asChild>
+                  <Link to={`/app/vagas/${id}`}>Cancelar</Link>
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </TabsContent>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="submit" disabled={updateJob.isPending} className="gap-2">
-              <Save className="h-4 w-4" /> {updateJob.isPending ? "Salvando..." : "Salvar Alterações"}
-            </Button>
-            <Button type="button" variant="outline" asChild>
-              <Link to={`/app/vagas/${id}`}>Cancelar</Link>
-            </Button>
+        <TabsContent value="comunicacao" className="mt-6">
+          <div className="mb-4">
+            <h3 className="text-base font-semibold text-foreground">Templates por etapa</h3>
+            <p className="text-sm text-muted-foreground">
+              Personalize o e-mail enviado quando o candidato é movido para cada etapa do pipeline.
+            </p>
           </div>
-        </form>
-      </Form>
+          <StageTemplatesEditor jobId={id!} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
