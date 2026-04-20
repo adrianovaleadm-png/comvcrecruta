@@ -135,8 +135,42 @@ export default function CompanyProfile() {
   };
   const removeDiferencial = (d: string) => setDiferenciais(diferenciais.filter(x => x !== d));
 
+  const handleCreateCompany = async () => {
+    if (!novoNomeFantasia.trim() || !novoRazaoSocial.trim() || !novoCnpj.trim()) {
+      toast.error("Preencha nome fantasia, razão social e CNPJ.");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase
+        .from("companies")
+        .insert({
+          nome_fantasia: novoNomeFantasia.trim(),
+          razao_social: novoRazaoSocial.trim(),
+          cnpj: novoCnpj.trim(),
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      setCompanyId(data.id);
+      setNomeFantasia(novoNomeFantasia.trim());
+      setRazaoSocial(novoRazaoSocial.trim());
+      setCnpj(novoCnpj.trim());
+      toast.success("Empresa criada! Complete o perfil abaixo.");
+      await refreshProfile();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar empresa.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!companyId) { toast.error("Empresa não encontrada."); return; }
+    if (!nomeFantasia.trim() || !razaoSocial.trim() || !cnpj.trim()) {
+      toast.error("Nome fantasia, razão social e CNPJ são obrigatórios.");
+      return;
+    }
     setSaving(true);
     try {
       let finalLogoUrl = logoUrl;
@@ -187,7 +221,38 @@ export default function CompanyProfile() {
   }
 
   if (!companyId) {
-    return <div className="p-8 text-center text-muted-foreground">Nenhuma empresa configurada.</div>;
+    return (
+      <div className="p-4 md:p-6 max-w-xl mx-auto">
+        <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Criar empresa</h1>
+              <p className="text-sm text-muted-foreground">Comece com os dados básicos. Você poderá completar o perfil em seguida.</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <Label>Nome Fantasia *</Label>
+              <Input value={novoNomeFantasia} onChange={e => setNovoNomeFantasia(e.target.value)} placeholder="Ex: Acme Tech" />
+            </div>
+            <div>
+              <Label>Razão Social *</Label>
+              <Input value={novoRazaoSocial} onChange={e => setNovoRazaoSocial(e.target.value)} placeholder="Ex: Acme Tecnologia LTDA" />
+            </div>
+            <div>
+              <Label>CNPJ *</Label>
+              <Input value={novoCnpj} onChange={e => setNovoCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+            </div>
+          </div>
+          <Button onClick={handleCreateCompany} disabled={creating} className="w-full">
+            {creating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</> : "Criar empresa"}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
