@@ -22,4 +22,6 @@ Updated: now
 - [Activity Monitoring](mem://arquitetura/monitoramento-atividades) — SQL triggers logging to activity_events for history
 - [Applications Management](mem://funcionalidades/gestao-candidaturas) — Candidate statuses (active/hired/rejected) and stage linking
 - [ATS Improvements](mem://funcionalidades/melhorias-ats-completas) — Auto-score, job edit, resume parsing, activity feed, candidate compare, templates, public application
+- [Pipeline Communication](mem://funcionalidades/comunicacao-pipeline) — Stage email templates + dialog on move + edge function (log-only without Resend)
+- [Stage Playbook](mem://funcionalidades/playbook-etapas) — Per-stage objective/actions/SLA, checklist per application, Processo tab in JobEdit
 - [Pipeline Communication](mem://funcionalidades/comunicacao-pipeline) — stage_templates table, send-stage-notification edge function, confirm modal on move, "Comunicação" tab in JobEdit
