@@ -31,6 +31,12 @@ export default function CompanyProfile() {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  // Form de criação inicial
+  const [novoNomeFantasia, setNovoNomeFantasia] = useState("");
+  const [novoRazaoSocial, setNovoRazaoSocial] = useState("");
+  const [novoCnpj, setNovoCnpj] = useState("");
 
   // Geral
   const [nomeFantasia, setNomeFantasia] = useState("");
