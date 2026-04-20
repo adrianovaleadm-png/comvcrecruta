@@ -1,61 +1,79 @@
 
-O usuário pergunta duas coisas:
-1. Como resolver o problema atual (não consegue cadastrar empresa em `/app/empresa`)
-2. O que ainda falta para concluir o app
 
-Olhando o estado: RLS de `companies` ainda exige `auth.uid()`, mas o resto do app está em modo dev sem login (todas as outras tabelas têm `Allow all access`). Por isso o INSERT/SELECT em `companies` falha silenciosamente.
+## Plano: Comunicação automática ao mover candidato no pipeline
 
-Vou propor a correção pontual + um roadmap enxuto do que falta para entregar o produto, respeitando a preferência do usuário (economizar créditos, placeholders para o avançado).
+### Comportamento desejado
+Quando o recrutador move um candidato de uma etapa para outra, o sistema deve:
+1. Registrar o movimento (já funciona)
+2. **Disparar e-mail ao candidato** com mensagem apropriada à nova etapa
+3. **Permitir personalizar o template** por etapa, por vaga
+4. **Permitir desligar** o envio caso o recrutador queira mover sem notificar
 
-## Plano: Destravar Cultura + Roadmap de Conclusão
+### Estrutura
 
-### Parte 1 — Correção imediata (destravar `/app/empresa`)
+```text
+Mover candidato → nova etapa
+        │
+        ├─► Trigger SQL atual: log em activity_events  ✅ (já existe)
+        │
+        └─► Frontend: após UPDATE bem-sucedido
+                 │
+                 ├─► Buscar template da etapa (stage_templates)
+                 ├─► Confirmar envio? (toggle "Notificar candidato")
+                 └─► Edge Function send-stage-notification
+                          │
+                          ├─► Renderiza template com {{nome}}, {{vaga}}, {{empresa}}
+                          └─► Envia e-mail via Resend
+```
 
-**Problema:** RLS de `companies` exige `auth.uid()`, mas o app roda em modo dev sem login. INSERT/SELECT falham → tela "Nenhuma empresa configurada".
+### 1. Banco de dados — nova tabela `stage_templates`
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | uuid | PK |
+| `stage_id` | uuid | FK para `stages` |
+| `assunto` | text | Assunto do e-mail |
+| `corpo` | text | Corpo (suporta `{{candidato}}`, `{{vaga}}`, `{{empresa}}`) |
+| `enviar_automatico` | boolean | Default true |
 
-**Correção:**
-1. Migration: substituir as 3 policies de `companies` por `Allow all access` (alinhado com `jobs`, `candidates`, etc.)
-2. `CompanyProfile.tsx`: adicionar fluxo "Criar empresa" quando nenhuma existir (formulário curto: nome fantasia, razão social, CNPJ) → após criar, abre as 4 abas normalmente
-3. Validação clara nos campos obrigatórios antes do UPDATE
+**Templates padrão** (criados automaticamente junto com as 7 etapas):
+- *Recebida* → "Recebemos sua candidatura"
+- *Triagem* → "Você passou para a triagem"
+- *Entrevista* → "Convite para entrevista"
+- *Case* → "Próxima etapa: case prático"
+- *Oferta* → "Temos uma proposta para você"
+- *Contratada* → "Bem-vindo(a) à equipe"
+- *Reprovada* → "Feedback sobre sua candidatura"
 
-### Parte 2 — Roadmap para concluir o app
+### 2. Edge Function `send-stage-notification`
+Recebe `application_id` + `new_stage_id`, busca dados do candidato/vaga/empresa/template, renderiza placeholders, envia via Resend.
 
-Com base no que já existe vs. placeholders:
+### 3. UI no Pipeline (`Pipeline.tsx`)
+Ao soltar o card numa nova coluna:
+- Mostrar mini-modal: *"Notificar candidato sobre mudança para 'Entrevista'?"*
+  - ☑ Enviar e-mail (default ligado se template tem `enviar_automatico=true`)
+  - Botão "Confirmar" → faz UPDATE e dispara função
+  - Botão "Mover sem notificar" → só UPDATE
+- Toast com resultado: "Candidato movido. E-mail enviado ✓"
 
-| Status | Módulo |
-|---|---|
-| Pronto | Vagas (CRUD, IA, pipeline, templates) |
-| Pronto | Candidatos (lista, perfil, parsing CV, comparar) |
-| Pronto | Fit Score (auto, pesos, triagem) |
-| Pronto | Candidatura pública + link copiável |
-| Pronto | Dashboard + Analytics |
-| Pronto | Empresa/Cultura (após correção acima) |
-| Falta | **Autenticação real** (hoje em modo dev) |
-| Placeholder | Mensagens, Equipe, Requisições, Indicações, Vagas Internas, Templates de comunicação, Página de Carreiras pública |
+### 4. Editor de templates (nova aba em `JobEdit.tsx`)
+Aba **"Comunicação"** lista as 7 etapas, cada uma com:
+- Toggle "Notificar automaticamente"
+- Campo Assunto + Corpo (textarea com chips de variáveis)
+- Botão "Restaurar padrão"
 
-**Sugestão de priorização (3 sprints curtos):**
+### 5. Pré-requisito
+- Domínio de e-mail verificado (Resend) — ferramenta `setup_email_infra`
+- Sem domínio: cair em modo *log-only* (registra que enviaria, sem mandar)
 
-**Sprint A — Essencial para go-live**
-- Reativar autenticação (login/signup já existem, só religar guards)
-- Restaurar RLS proper em `jobs`/`candidates`/`companies` por empresa
-- Página pública de Carreiras (`/carreiras/:companyId`) listando vagas abertas
-
-**Sprint B — Operação do recrutador**
-- Mensagens (chat simples recrutador ↔ candidato)
-- Equipe (convidar membros, papéis admin/recruiter)
-- Templates de comunicação (e-mails de status)
-
-**Sprint C — Diferenciais**
-- Indicações (link de referral por colaborador)
-- Vagas Internas (filtro por audiência)
-- Requisições (fluxo de aprovação antes de abrir vaga)
-
-### Próximo passo concreto
-
-Implemento agora **só a Parte 1** (correção do cadastro de empresa). Depois você escolhe por qual sprint seguir.
-
-### Arquivos da Parte 1
+### Arquivos afetados
 | Arquivo | Ação |
 |---|---|
-| Migration SQL | DROP 3 policies de `companies` + CREATE `Allow all access` |
-| `src/pages/app/CompanyProfile.tsx` | Fluxo de criação inicial + validação de campos obrigatórios |
+| Migration SQL | Criar `stage_templates` + seed dos 7 templates por vaga existente + trigger para popular em vagas novas |
+| `supabase/functions/send-stage-notification/index.ts` | Criar |
+| `src/pages/app/Pipeline.tsx` | Mini-modal de confirmação ao mover + chamada da função |
+| `src/pages/app/JobEdit.tsx` | Adicionar aba "Comunicação" |
+| `src/components/jobs/StageTemplatesEditor.tsx` | Criar componente de edição |
+
+### Resultado
+Cada movimento no pipeline dispara comunicação automática e auditável ao candidato, com templates personalizáveis por vaga e opção de envio manual.
+
