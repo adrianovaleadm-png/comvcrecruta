@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import ScreeningQuestionsBuilder, { type ScreeningQuestion } from "@/components/jobs/ScreeningQuestionsBuilder";
 import ScoreWeightsConfig, { type ScoreWeights } from "@/components/jobs/ScoreWeightsConfig";
 import StageTemplatesEditor from "@/components/jobs/StageTemplatesEditor";
+import StageProcessEditor from "@/components/jobs/StageProcessEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface JobFormValues {
