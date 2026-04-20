@@ -1,74 +1,90 @@
 
 
-## Plano: Playbook de Etapas — guia de ações do recrutador por fase
+## Plano: Drawer do Candidato + Página de Carreiras + Timeline de Comunicação
 
-### Objetivo
-Hoje o pipeline tem 7 etapas (Recebida → Triagem → Entrevista → Case → Oferta → Contratada → Reprovada), mas não há orientação sobre **o que o recrutador deve fazer em cada uma**. Vamos criar um "playbook" editável por etapa, com checklist de ações, SLA e critérios de avanço.
+Vou implementar as 3 frentes em sequência, numa única entrega.
 
-### O que será adicionado a cada etapa
+---
 
-Cada etapa do pipeline ganha:
+### Frente 1 — Drawer de detalhe do candidato (Pipeline)
 
-| Campo | Descrição |
-|---|---|
-| `objetivo` | Frase curta: o que se busca nesta fase |
-| `acoes` | Checklist de tarefas do recrutador (texto, uma por linha) |
-| `criterios_avanco` | O que o candidato precisa atender para avançar |
-| `sla_dias` | Prazo máximo na etapa (alerta visual depois disso) |
-| `responsavel_padrao` | Recrutador / Gestor / RH (sugestão) |
+**Comportamento:** clicar num card do pipeline abre um painel lateral (Sheet) com tudo sobre o candidato.
 
-### Playbook padrão (criado automaticamente)
+**Conteúdo do drawer (4 abas):**
+- **Resumo** — avatar, nome, contato (email/telefone/cidade/LinkedIn), CV (link do `candidate_files`), resumo, tags
+- **Score** — `FitScoreBadge` + breakdown por critério (de `candidate_scores.criteria_scores`) + `ai_summary`
+- **Triagem** — perguntas de `screening_questions` com respostas de `screening_answers`
+- **Processo** — `CandidateActionsPanel` (já pronto) com checklist da etapa + histórico de movimentações filtrado de `activity_events` (entity_type='application', entity_id=app.id)
 
-| Etapa | Objetivo | Ações principais |
-|---|---|---|
-| **Recebida** | Confirmar recebimento e organizar fila | Conferir CV, validar requisitos mínimos, agradecer candidatura |
-| **Triagem** | Filtrar perfis aderentes | Ler CV, checar fit_score, responder questionário, decidir avanço |
-| **Entrevista** | Conhecer o candidato | Agendar call, conduzir entrevista comportamental, registrar notas |
-| **Case** | Avaliar competência técnica | Enviar enunciado, definir prazo, avaliar entrega, dar feedback |
-| **Oferta** | Fechar contratação | Alinhar pacote, enviar proposta formal, negociar, coletar aceite |
-| **Contratada** | Iniciar onboarding | Enviar boas-vindas, acionar RH/DP, marcar primeiro dia |
-| **Reprovada** | Encerrar com respeito | Enviar feedback construtivo, manter no banco de talentos |
+**Ações no rodapé:**
+- Mover etapa (select com as stages da vaga) → reusa fluxo de notificação já existente
+- Marcar como Contratado / Reprovado (atalhos)
+- Abrir perfil completo (link para `/app/talentos/:id`)
 
-### Onde aparece na UI
+**Arquivos:**
+- Criar `src/components/pipeline/CandidateDrawer.tsx`
+- Editar `src/pages/app/Pipeline.tsx` — onClick no card abre o drawer (estado `selectedAppId`)
 
-**1. Pipeline (`Pipeline.tsx`)**
-- Cabeçalho de cada coluna ganha ícone de info (ⓘ) → popover com objetivo + ações da etapa
-- Card do candidato mostra badge amarelo se passou do SLA da etapa
+---
 
-**2. Detalhe do candidato (drawer/modal)**
-- Painel lateral "Próximas ações" com checklist da etapa atual (marcar concluído por candidato)
-- Indicador de tempo na etapa vs SLA
+### Frente 2 — Página pública de Carreiras
 
-**3. Edição da vaga (`JobEdit.tsx`)**
-- Nova aba **"Processo"** ao lado de "Comunicação"
-- Lista as 7 etapas, cada uma editável: objetivo, ações, critérios, SLA, responsável
-- Botão "Restaurar padrão"
+**Rota:** `/carreiras/:companySlug?` (sem slug = lista de empresas se houver mais de uma; com slug = página da empresa)
 
-### Banco de dados
+Como o app hoje opera com 1 empresa em modo dev, simplificamos: **`/carreiras`** mostra a primeira (e única) empresa cadastrada.
 
-**Alterar tabela `stages`** — adicionar 5 colunas:
-- `objetivo` text
-- `acoes` text  (linhas separadas por `\n`)
-- `criterios_avanco` text
-- `sla_dias` int (default null = sem prazo)
-- `responsavel_padrao` text
+**Estrutura da página:**
+1. **Hero** — logo, nome fantasia, propósito, missão (de `companies`)
+2. **Sobre** — descrição, valores, ambiente de trabalho, modelo de trabalho
+3. **Benefícios** — chips de `companies.beneficios`
+4. **Vagas abertas** — grid de cards puxando de `jobs` onde `status='open'`
+   - Filtros: departamento, modelo de trabalho, senioridade
+   - Card mostra: título, departamento, localização, modelo, faixa salarial
+   - Botão "Candidatar-se" → `/aplicar/:jobId` (reusa `PublicApplication.tsx` existente)
+5. **Footer** — redes sociais (LinkedIn, Instagram, website)
 
-**Nova tabela `application_checklist`** — para marcar tarefas concluídas por candidato:
-- `id`, `application_id`, `stage_id`, `acao` (texto), `concluido` (bool), `concluido_em`
+**Arquivos:**
+- Criar `src/pages/Carreiras.tsx`
+- Editar `src/App.tsx` — rota pública `/carreiras`
+- Opcional: card no Painel com link "Ver minha página de Carreiras"
 
-**Trigger** — ao criar nova vaga (que já cria as 7 stages), preencher os campos do playbook padrão.
-**Backfill** — popular as stages existentes com o playbook padrão.
+---
 
-### Arquivos afetados
+### Frente 3 — Timeline de comunicação no perfil do candidato
+
+**Onde:** `src/pages/app/TalentProfile.tsx` — nova aba "Comunicação"
+
+**Conteúdo:**
+- Lista cronológica reversa de eventos `activity_events` onde:
+  - `entity_type='application'` AND `entity_id IN (apps do candidato)`
+  - `type IN ('email_sent','email_logged','stage_changed','status_changed')`
+- Cada item mostra: ícone (✉️ / 🔄), data/hora, etapa, assunto do e-mail (do `metadata`), badge "enviado" ou "log-only"
+- Filtro por vaga (se candidato está em mais de uma)
+
+**Pequeno ajuste na edge function** `send-stage-notification`:
+- Garantir que sempre grave em `activity_events` com:
+  - `type='email_sent'` (com domínio configurado) ou `'email_logged'` (modo log-only)
+  - `metadata`: `{ stage_name, assunto, to_email, mode }`
+
+**Arquivos:**
+- Editar `src/pages/app/TalentProfile.tsx` — adicionar aba "Comunicação"
+- Editar `supabase/functions/send-stage-notification/index.ts` — padronizar log
+
+---
+
+### Resumo de arquivos
 
 | Arquivo | Ação |
 |---|---|
-| Migration SQL | Add colunas em `stages`, criar `application_checklist`, atualizar trigger `seed_default_stages`, backfill |
-| `src/pages/app/Pipeline.tsx` | Popover de info na coluna + badge SLA no card |
-| `src/components/jobs/StageProcessEditor.tsx` | Criar — editor do playbook (nova aba) |
-| `src/pages/app/JobEdit.tsx` | Adicionar aba "Processo" |
-| `src/components/pipeline/CandidateActionsPanel.tsx` | Criar — checklist por candidato (usado no drawer/modal de detalhe) |
+| `src/components/pipeline/CandidateDrawer.tsx` | Criar |
+| `src/pages/app/Pipeline.tsx` | Plugar drawer no clique do card |
+| `src/pages/Carreiras.tsx` | Criar |
+| `src/App.tsx` | Adicionar rota `/carreiras` |
+| `src/pages/app/TalentProfile.tsx` | Aba "Comunicação" com timeline |
+| `supabase/functions/send-stage-notification/index.ts` | Padronizar registro em activity_events |
 
 ### Resultado
-Cada vaga passa a ter um playbook claro de "o que fazer em cada etapa", com checklist acionável por candidato e alertas de SLA — transformando o pipeline de um quadro visual em um guia operacional do recrutador.
+- Recrutador trabalha o pipeline sem sair da tela (drawer)
+- Empresa ganha vitrine pública com sua cultura + vagas abertas
+- Toda comunicação enviada fica auditável no perfil do candidato
 
