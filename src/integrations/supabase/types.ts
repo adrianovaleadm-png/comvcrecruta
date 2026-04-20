@@ -44,6 +44,51 @@ export type Database = {
         }
         Relationships: []
       }
+      application_checklist: {
+        Row: {
+          acao: string
+          application_id: string
+          concluido: boolean
+          concluido_em: string | null
+          created_at: string
+          id: string
+          stage_id: string
+        }
+        Insert: {
+          acao: string
+          application_id: string
+          concluido?: boolean
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          stage_id: string
+        }
+        Update: {
+          acao?: string
+          application_id?: string
+          concluido?: boolean
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_checklist_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_checklist_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           candidate_id: string | null
@@ -617,22 +662,37 @@ export type Database = {
       }
       stages: {
         Row: {
+          acoes: string | null
+          criterios_avanco: string | null
           id: string
           job_id: string
           name: string
+          objetivo: string | null
           order_index: number
+          responsavel_padrao: string | null
+          sla_dias: number | null
         }
         Insert: {
+          acoes?: string | null
+          criterios_avanco?: string | null
           id?: string
           job_id: string
           name: string
+          objetivo?: string | null
           order_index: number
+          responsavel_padrao?: string | null
+          sla_dias?: number | null
         }
         Update: {
+          acoes?: string | null
+          criterios_avanco?: string | null
           id?: string
           job_id?: string
           name?: string
+          objetivo?: string | null
           order_index?: number
+          responsavel_padrao?: string | null
+          sla_dias?: number | null
         }
         Relationships: [
           {
@@ -664,6 +724,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      default_playbook_for_stage: {
+        Args: { _stage_name: string }
+        Returns: {
+          acoes: string
+          criterios_avanco: string
+          objetivo: string
+          responsavel_padrao: string
+          sla_dias: number
+        }[]
+      }
       default_template_for_stage: {
         Args: { _stage_name: string }
         Returns: {
