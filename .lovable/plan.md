@@ -1,79 +1,74 @@
 
 
-## Plano: Comunicação automática ao mover candidato no pipeline
+## Plano: Playbook de Etapas — guia de ações do recrutador por fase
 
-### Comportamento desejado
-Quando o recrutador move um candidato de uma etapa para outra, o sistema deve:
-1. Registrar o movimento (já funciona)
-2. **Disparar e-mail ao candidato** com mensagem apropriada à nova etapa
-3. **Permitir personalizar o template** por etapa, por vaga
-4. **Permitir desligar** o envio caso o recrutador queira mover sem notificar
+### Objetivo
+Hoje o pipeline tem 7 etapas (Recebida → Triagem → Entrevista → Case → Oferta → Contratada → Reprovada), mas não há orientação sobre **o que o recrutador deve fazer em cada uma**. Vamos criar um "playbook" editável por etapa, com checklist de ações, SLA e critérios de avanço.
 
-### Estrutura
+### O que será adicionado a cada etapa
 
-```text
-Mover candidato → nova etapa
-        │
-        ├─► Trigger SQL atual: log em activity_events  ✅ (já existe)
-        │
-        └─► Frontend: após UPDATE bem-sucedido
-                 │
-                 ├─► Buscar template da etapa (stage_templates)
-                 ├─► Confirmar envio? (toggle "Notificar candidato")
-                 └─► Edge Function send-stage-notification
-                          │
-                          ├─► Renderiza template com {{nome}}, {{vaga}}, {{empresa}}
-                          └─► Envia e-mail via Resend
-```
+Cada etapa do pipeline ganha:
 
-### 1. Banco de dados — nova tabela `stage_templates`
-| Campo | Tipo | Descrição |
+| Campo | Descrição |
+|---|---|
+| `objetivo` | Frase curta: o que se busca nesta fase |
+| `acoes` | Checklist de tarefas do recrutador (texto, uma por linha) |
+| `criterios_avanco` | O que o candidato precisa atender para avançar |
+| `sla_dias` | Prazo máximo na etapa (alerta visual depois disso) |
+| `responsavel_padrao` | Recrutador / Gestor / RH (sugestão) |
+
+### Playbook padrão (criado automaticamente)
+
+| Etapa | Objetivo | Ações principais |
 |---|---|---|
-| `id` | uuid | PK |
-| `stage_id` | uuid | FK para `stages` |
-| `assunto` | text | Assunto do e-mail |
-| `corpo` | text | Corpo (suporta `{{candidato}}`, `{{vaga}}`, `{{empresa}}`) |
-| `enviar_automatico` | boolean | Default true |
+| **Recebida** | Confirmar recebimento e organizar fila | Conferir CV, validar requisitos mínimos, agradecer candidatura |
+| **Triagem** | Filtrar perfis aderentes | Ler CV, checar fit_score, responder questionário, decidir avanço |
+| **Entrevista** | Conhecer o candidato | Agendar call, conduzir entrevista comportamental, registrar notas |
+| **Case** | Avaliar competência técnica | Enviar enunciado, definir prazo, avaliar entrega, dar feedback |
+| **Oferta** | Fechar contratação | Alinhar pacote, enviar proposta formal, negociar, coletar aceite |
+| **Contratada** | Iniciar onboarding | Enviar boas-vindas, acionar RH/DP, marcar primeiro dia |
+| **Reprovada** | Encerrar com respeito | Enviar feedback construtivo, manter no banco de talentos |
 
-**Templates padrão** (criados automaticamente junto com as 7 etapas):
-- *Recebida* → "Recebemos sua candidatura"
-- *Triagem* → "Você passou para a triagem"
-- *Entrevista* → "Convite para entrevista"
-- *Case* → "Próxima etapa: case prático"
-- *Oferta* → "Temos uma proposta para você"
-- *Contratada* → "Bem-vindo(a) à equipe"
-- *Reprovada* → "Feedback sobre sua candidatura"
+### Onde aparece na UI
 
-### 2. Edge Function `send-stage-notification`
-Recebe `application_id` + `new_stage_id`, busca dados do candidato/vaga/empresa/template, renderiza placeholders, envia via Resend.
+**1. Pipeline (`Pipeline.tsx`)**
+- Cabeçalho de cada coluna ganha ícone de info (ⓘ) → popover com objetivo + ações da etapa
+- Card do candidato mostra badge amarelo se passou do SLA da etapa
 
-### 3. UI no Pipeline (`Pipeline.tsx`)
-Ao soltar o card numa nova coluna:
-- Mostrar mini-modal: *"Notificar candidato sobre mudança para 'Entrevista'?"*
-  - ☑ Enviar e-mail (default ligado se template tem `enviar_automatico=true`)
-  - Botão "Confirmar" → faz UPDATE e dispara função
-  - Botão "Mover sem notificar" → só UPDATE
-- Toast com resultado: "Candidato movido. E-mail enviado ✓"
+**2. Detalhe do candidato (drawer/modal)**
+- Painel lateral "Próximas ações" com checklist da etapa atual (marcar concluído por candidato)
+- Indicador de tempo na etapa vs SLA
 
-### 4. Editor de templates (nova aba em `JobEdit.tsx`)
-Aba **"Comunicação"** lista as 7 etapas, cada uma com:
-- Toggle "Notificar automaticamente"
-- Campo Assunto + Corpo (textarea com chips de variáveis)
+**3. Edição da vaga (`JobEdit.tsx`)**
+- Nova aba **"Processo"** ao lado de "Comunicação"
+- Lista as 7 etapas, cada uma editável: objetivo, ações, critérios, SLA, responsável
 - Botão "Restaurar padrão"
 
-### 5. Pré-requisito
-- Domínio de e-mail verificado (Resend) — ferramenta `setup_email_infra`
-- Sem domínio: cair em modo *log-only* (registra que enviaria, sem mandar)
+### Banco de dados
+
+**Alterar tabela `stages`** — adicionar 5 colunas:
+- `objetivo` text
+- `acoes` text  (linhas separadas por `\n`)
+- `criterios_avanco` text
+- `sla_dias` int (default null = sem prazo)
+- `responsavel_padrao` text
+
+**Nova tabela `application_checklist`** — para marcar tarefas concluídas por candidato:
+- `id`, `application_id`, `stage_id`, `acao` (texto), `concluido` (bool), `concluido_em`
+
+**Trigger** — ao criar nova vaga (que já cria as 7 stages), preencher os campos do playbook padrão.
+**Backfill** — popular as stages existentes com o playbook padrão.
 
 ### Arquivos afetados
+
 | Arquivo | Ação |
 |---|---|
-| Migration SQL | Criar `stage_templates` + seed dos 7 templates por vaga existente + trigger para popular em vagas novas |
-| `supabase/functions/send-stage-notification/index.ts` | Criar |
-| `src/pages/app/Pipeline.tsx` | Mini-modal de confirmação ao mover + chamada da função |
-| `src/pages/app/JobEdit.tsx` | Adicionar aba "Comunicação" |
-| `src/components/jobs/StageTemplatesEditor.tsx` | Criar componente de edição |
+| Migration SQL | Add colunas em `stages`, criar `application_checklist`, atualizar trigger `seed_default_stages`, backfill |
+| `src/pages/app/Pipeline.tsx` | Popover de info na coluna + badge SLA no card |
+| `src/components/jobs/StageProcessEditor.tsx` | Criar — editor do playbook (nova aba) |
+| `src/pages/app/JobEdit.tsx` | Adicionar aba "Processo" |
+| `src/components/pipeline/CandidateActionsPanel.tsx` | Criar — checklist por candidato (usado no drawer/modal de detalhe) |
 
 ### Resultado
-Cada movimento no pipeline dispara comunicação automática e auditável ao candidato, com templates personalizáveis por vaga e opção de envio manual.
+Cada vaga passa a ter um playbook claro de "o que fazer em cada etapa", com checklist acionável por candidato e alertas de SLA — transformando o pipeline de um quadro visual em um guia operacional do recrutador.
 
