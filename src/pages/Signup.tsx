@@ -100,6 +100,20 @@ export default function Signup() {
       });
       if (profileError) throw profileError;
 
+      if (userType === "candidato") {
+        // Adoção: ligar candidates órfãos com mesmo email a este profile
+        const emailLower = email.trim().toLowerCase();
+        const { error: adoptError } = await supabase
+          .from("candidates")
+          .update({ profile_id: userId })
+          .eq("email", emailLower)
+          .is("profile_id", null);
+        if (adoptError) console.warn("Adoção de candidato falhou:", adoptError);
+
+        navigate("/candidato", { replace: true });
+        return;
+      }
+
       if (isEmpresa) {
         const cnpjClean = cnpj.replace(/\D/g, "");
         const { data: companyData, error: companyError } = await supabase
