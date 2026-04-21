@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, User, Search } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const userTypes = [
   {
