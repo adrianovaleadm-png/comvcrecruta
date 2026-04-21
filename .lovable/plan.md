@@ -1,110 +1,75 @@
 
 
-## Plano: Proteger rotas /app com ProtectedRoute
+## Plano: Redirect pós-login (Frente A)
 
-### (a) Como o AuthContext funciona hoje
+### Objetivo
+Fazer com que, após login bem-sucedido, o usuário seja redirecionado automaticamente para sua área (/app para empresa/recrutador, /candidato para candidato). Também evitar que usuários já logados fiquem na tela de seleção de perfil.
 
-`src/contexts/AuthContext.tsx` expõe via `useAuth()`:
-- `loading: boolean` — true até a sessão inicial ser resolvida (set como `false` tanto no `onAuthStateChange` quanto após `getSession()`).
-- `user: User | null` — usuário do Supabase (null = deslogado).
-- `session`, `profile`, `company`, `companyMember`, `signOut`, `refreshProfile`.
+### Alterações
 
-Detecção do estado:
-- **Carregando**: `loading === true`
-- **Deslogado**: `loading === false && !user`
-- **Logado**: `loading === false && !!user`
+**1. src/pages/Login.tsx**
 
-### (b) Onde o tipo do usuário está armazenado
+Adicionar `useAuth` import, `useEffect` que escuta `user`, `profile` e `loading`:
 
-O tipo está em **`profile.user_type`** (tabela `profiles`, coluna `user_type`), carregado em `fetchProfile()` após login. O código atual já testa `if (data?.user_type === "empresa")` para decidir se busca `company_members`/`companies`, confirmando que `"empresa"` é um valor válido. O código também trata `"candidato"` como o outro tipo esperado (conforme seu objetivo).
-
-**Observação importante:** o `profile` é carregado **assincronamente após** o `user` ficar disponível (`setTimeout(() => fetchProfile(...), 0)`). Existe uma janela curta em que `user !== null` mas `profile === null`. O `ProtectedRoute` precisa tratar isso como "ainda carregando" para não redirecionar empresa para `/candidato` por engano.
-
-### (c) Estrutura proposta do `ProtectedRoute`
-
-`src/components/auth/ProtectedRoute.tsx`:
-
-```tsx
-import { Navigate, Outlet } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+```typescript
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
 
-export default function ProtectedRoute() {
-  const { loading, user, profile } = useAuth();
+export default function Login() {
+  const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();  // novo
+  
+  // Redirect quando autenticado
+  useEffect(() => {
+    if (!loading && user && profile) {
+      if (profile.user_type === "candidato") {
+        navigate("/candidato", { replace: true });
+      } else {
+        navigate("/app", { replace: true });
+      }
+    }
+  }, [loading, user, profile, navigate]);
 
-  // 1. Sessão ainda carregando
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // 2. Não logado → /login
-  if (!user) return <Navigate to="/login" replace />;
-
-  // 3. Logado mas perfil ainda não carregou → loading
-  //    (evita redirecionar empresa para /candidato por engano)
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  // 4. Candidato não pode acessar /app
-  if (profile.user_type === "candidato") {
-    return <Navigate to="/candidato" replace />;
-  }
-
-  // 5. Empresa / recrutador → libera
-  return <Outlet />;
+  // ... resto do componente inalterado
 }
 ```
 
-### (d) Mudança exata em `src/App.tsx`
+**2. src/pages/Index.tsx**
 
-Adicionar import:
-```ts
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+Adicionar `useAuth` e `useEffect` para redirect de usuários já logados:
+
+```typescript
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+
+export default function Index() {
+  const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();  // novo
+  
+  // Se já estiver logado, não fica na tela de escolha
+  useEffect(() => {
+    if (!loading && user && profile) {
+      if (profile.user_type === "candidato") {
+        navigate("/candidato", { replace: true });
+      } else {
+        navigate("/app", { replace: true });
+      }
+    }
+  }, [loading, user, profile, navigate]);
+
+  // ... resto do componente inalterado
+}
 ```
-
-Substituir o bloco da linha 43:
-```tsx
-<Route path="/app" element={<AppLayout />}>
-```
-
-Por uma rota de proteção que envolve o `AppLayout`, mantendo todas as filhas intactas:
-```tsx
-<Route path="/app" element={<ProtectedRoute />}>
-  <Route element={<AppLayout />}>
-    <Route index element={<Painel />} />
-    <Route path="vagas" element={<JobsList />} />
-    {/* ...todas as rotas filhas atuais, sem mudança... */}
-    <Route path="carreiras" element={<PlaceholderPage title="Página de Carreiras" description="Configure sua página pública de carreiras." />} />
-  </Route>
-</Route>
-```
-
-O `ProtectedRoute` renderiza `<Outlet />` quando autorizado → o `<Outlet />` é o `AppLayout` → o `AppLayout` renderiza seu próprio `<Outlet />` com a página filha. Aninhamento padrão do React Router, sem alterar nada dentro das páginas.
-
-### Arquivos afetados
-
-| Arquivo | Ação |
-|---|---|
-| `src/components/auth/ProtectedRoute.tsx` | Criar |
-| `src/App.tsx` | Adicionar import + envolver `/app` com `ProtectedRoute` |
 
 ### Guardrails respeitados
+- Apenas adiciona imports, hooks e useEffect — não altera JSX, formulários ou handlers
+- Lógica de login (handleLogin) inalterada
+- Rotas públicas e App.tsx inalterados
+- Usuário órfão contato@scalagestao.com.br não é modificado (fica para próxima etapa)
 
-- AuthContext **não modificado** — apenas consumido.
-- Nenhuma página dentro de `/app` alterada.
-- Rotas públicas (`/`, `/signup`, `/login`, `/carreiras`, `/verify-email`, `/onboarding`, `/candidato`, `/vaga/:id/candidatar`) **inalteradas**.
-- Fluxo de Login/Signup **inalterado** (Login já redireciona via mudança de auth state — quando o usuário logar, o `ProtectedRoute` libera o acesso na próxima renderização).
-
-### Nota sobre o modo dev
-
-A memória do projeto registra "modo dev" com RLS aberto. Esta proteção é **client-side de UX** — quando você reativar autenticação real e RLS por empresa, este `ProtectedRoute` continua válido e não precisa de ajuste.
+### Arquivos afetados
+| Arquivo | Ação |
+|---|---|
+| `src/pages/Login.tsx` | Adicionar useAuth + useEffect redirect |
+| `src/pages/Index.tsx` | Adicionar useAuth + useEffect redirect |
 
