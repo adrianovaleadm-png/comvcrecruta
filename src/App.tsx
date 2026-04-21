@@ -25,6 +25,7 @@ import Analytics from "./pages/app/Analytics";
 import CompanyProfile from "./pages/app/CompanyProfile";
 import PublicApplication from "./pages/app/PublicApplication";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -40,24 +41,26 @@ function AppRoutes() {
       <Route path="/carreiras" element={<Carreiras />} />
       <Route path="/vaga/:id/candidatar" element={<PublicApplication />} />
 
-      <Route path="/app" element={<AppLayout />}>
-        <Route index element={<Painel />} />
-        <Route path="vagas" element={<JobsList />} />
-        <Route path="vagas/nova" element={<JobCreate />} />
-        <Route path="vagas/:id" element={<JobDetail />} />
-        <Route path="vagas/:id/editar" element={<JobEdit />} />
-        <Route path="vagas/:id/pipeline" element={<Pipeline />} />
-        <Route path="talentos" element={<TalentList />} />
-        <Route path="talentos/:id" element={<TalentProfile />} />
-        <Route path="mensagens" element={<PlaceholderPage title="Mensagens" description="Comunique-se com candidatos e equipe." />} />
-        <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
-        <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="empresa" element={<CompanyProfile />} />
-        <Route path="equipe" element={<PlaceholderPage title="Equipe" description="Gerencie membros e permissões." />} />
-        <Route path="requisicoes" element={<PlaceholderPage title="Requisições" description="Aprovações e fluxos de requisição de vagas." />} />
-        <Route path="templates" element={<PlaceholderPage title="Templates" description="Modelos de vagas e comunicações." />} />
-        <Route path="carreiras" element={<PlaceholderPage title="Página de Carreiras" description="Configure sua página pública de carreiras." />} />
+      <Route path="/app" element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<Painel />} />
+          <Route path="vagas" element={<JobsList />} />
+          <Route path="vagas/nova" element={<JobCreate />} />
+          <Route path="vagas/:id" element={<JobDetail />} />
+          <Route path="vagas/:id/editar" element={<JobEdit />} />
+          <Route path="vagas/:id/pipeline" element={<Pipeline />} />
+          <Route path="talentos" element={<TalentList />} />
+          <Route path="talentos/:id" element={<TalentProfile />} />
+          <Route path="mensagens" element={<PlaceholderPage title="Mensagens" description="Comunique-se com candidatos e equipe." />} />
+          <Route path="vagas-internas" element={<PlaceholderPage title="Vagas Internas" description="Vagas exclusivas para colaboradores." />} />
+          <Route path="indicacoes" element={<PlaceholderPage title="Indicações" description="Programa de indicação de candidatos." />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="empresa" element={<CompanyProfile />} />
+          <Route path="equipe" element={<PlaceholderPage title="Equipe" description="Gerencie membros e permissões." />} />
+          <Route path="requisicoes" element={<PlaceholderPage title="Requisições" description="Aprovações e fluxos de requisição de vagas." />} />
+          <Route path="templates" element={<PlaceholderPage title="Templates" description="Modelos de vagas e comunicações." />} />
+          <Route path="carreiras" element={<PlaceholderPage title="Página de Carreiras" description="Configure sua página pública de carreiras." />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />
