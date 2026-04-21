@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, User, Search } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const userTypes = [
   {
@@ -24,6 +26,17 @@ const userTypes = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const { user, profile, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user && profile) {
+      if (profile.user_type === "candidato") {
+        navigate("/candidato", { replace: true });
+      } else {
+        navigate("/app", { replace: true });
+      }
+    }
+  }, [loading, user, profile, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
