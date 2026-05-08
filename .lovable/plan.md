@@ -1,87 +1,81 @@
+## Diagnóstico: dados salvos, mas página recarrega empresa errada
 
+### Causa raiz
+Em `CompanyProfile.tsx` (linhas 73-82), quando não há `ctxCompany` (modo dev sem auth), o fallback faz:
 
-## Plano: Signup de Candidato + Adoção Automática (revisado)
+```ts
+const { data } = await supabase.from("companies").select("id").limit(1).maybeSingle();
+```
 
-### Confirmação sobre auto-login
-**Caso (b) confirmado**: o projeto está com **auto-confirm ATIVO**. Evidência: nos logs da auditoria anterior, `contato@scalagestao.com.br` recebeu `invalid_credentials` ao tentar login (não `email_not_confirmed`), provando que o email foi confirmado sem clique no link. Além disso, o `supabase.auth.signUp` retorna **session já preenchida** quando confirmação está desativada — o usuário já fica logado no momento do signup.
+**Sem `ORDER BY`**, o Postgres retorna **qualquer** linha — pode variar entre reloads. Hoje há **4 empresas** no banco:
 
-Conclusão: mandar o candidato para `/verify-email` é **errado** hoje — ele já está logado e a tela só causa confusão. Vai pedir pra "verificar email" enquanto o `useEffect` de redirect já poderia mandá-lo direto pra `/candidato`.
-
-### Ajuste no plano: redirect pós-signup diferenciado
-
-| Tipo | Comportamento atual | Comportamento novo |
+| nome_fantasia | cnpj | created_at |
 |---|---|---|
-| Empresa / Recrutador | `navigate("/verify-email")` | **Manter** `navigate("/verify-email")` (fluxo já validado, mantém guardrail) |
-| Candidato | `navigate("/verify-email")` | `navigate("/candidato", { replace: true })` direto, ou nem navegar — deixar o `useEffect` do `Login`/`Index` resolver assim que `profile` carregar |
+| empresa teste | 11222333000110 | 2026-05-06 |
+| teste4 | 11222333000144 | 2026-04-21 |
+| Com voce, Scala | 36.438.676/0001-09 | 2026-04-21 |
+| com você, Scala | 36438676000109 | 2026-04-20 |
 
-Vou usar `navigate("/candidato", { replace: true })` explícito após a adoção, para evitar flicker e ter controle determinístico.
+Você edita uma (ex: `teste4`), clica Salvar — **o UPDATE acontece corretamente**. Mas ao recarregar a página, o fallback pode trazer outra empresa, dando a impressão de que "não salvou".
 
-### (a) Abordagem: **A — coluna `profile_id` em `candidates`** (sem mudança)
+Além disso, quando você cria uma nova empresa via tela "Criar empresa", `companyId` é setado em memória — mas no próximo F5 o fallback escolhe outra.
 
-### (b) Mudanças exatas em `src/pages/Signup.tsx`
+### Frente única: tornar o carregamento determinístico
 
-Em `handleSubmit`, **após** `profiles.insert`:
+**Arquivo:** `src/pages/app/CompanyProfile.tsx`
 
-```typescript
-if (userType === "candidato") {
-  // Adoção: ligar candidates órfãos com mesmo email a este profile
-  const emailLower = email.trim().toLowerCase();
-  const { error: adoptError } = await supabase
-    .from("candidates")
-    .update({ profile_id: userId })
-    .eq("email", emailLower)
-    .is("profile_id", null);
-  if (adoptError) console.warn("Adoção falhou:", adoptError);
+**Mudança 1 — fallback ordenado + persistência local da escolha:**
 
-  navigate("/candidato", { replace: true });
-  return;
-}
-
-// empresa/recrutador: fluxo atual inalterado
-if (isEmpresa) { /* ...code atual... */ }
-
-navigate("/verify-email");
+```ts
+useEffect(() => {
+  (async () => {
+    let id = ctxCompany?.id;
+    if (!id) {
+      // Dev: tenta usar a última empresa selecionada nesta sessão
+      const stored = localStorage.getItem("dev_company_id");
+      if (stored) {
+        const { data } = await supabase.from("companies").select("id").eq("id", stored).maybeSingle();
+        if (data) id = data.id;
+      }
+      // Fallback: empresa mais recente (determinístico)
+      if (!id) {
+        const { data } = await supabase
+          .from("companies")
+          .select("id")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        id = data?.id;
+      }
+    }
+    if (!id) { setLoading(false); return; }
+    setCompanyId(id);
+    localStorage.setItem("dev_company_id", id);
+    // ...resto igual
+  })();
+}, [ctxCompany?.id]);
 ```
 
-JSX: campos de empresa já são guardados por `isEmpresa`, então o form de candidato fica naturalmente simplificado (nome, email, senha, confirmar senha). Sem mudança de markup necessária.
+**Mudança 2 — após `handleCreateCompany`, persistir id:**
 
-### (c) Migration SQL (sem mudança)
-
-```sql
-ALTER TABLE public.candidates
-  ADD COLUMN profile_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_candidates_profile_id
-  ON public.candidates(profile_id);
-
-CREATE INDEX IF NOT EXISTS idx_candidates_email
-  ON public.candidates(lower(email));
+```ts
+setCompanyId(data.id);
+localStorage.setItem("dev_company_id", data.id);
 ```
 
-### (d) RLS — sem mudança
-A policy aberta atual em `candidates` permite o UPDATE da adoção. Restrição de segurança fica no client (`eq("email", emailLower)` + `is("profile_id", null)`). Policy hardened fica anotada para o futuro.
+### O que isso resolve
+- Reload sempre traz a mesma empresa (a mais recente, ou a explicitamente criada/escolhida).
+- Edições em qualquer aba (Geral/Cultura/Benefícios/Redes) ficam visíveis após F5.
+- Não toca em RLS, auth, schema ou outras frentes.
 
-### (e) Ordem dos passos para candidato
-1. `supabase.auth.signUp` (retorna session já válida — usuário logado)
-2. `profiles.insert({ user_type: 'candidato', ... })`
-3. `UPDATE candidates SET profile_id = userId WHERE lower(email) = ? AND profile_id IS NULL`
-4. `navigate("/candidato", { replace: true })`
+### O que NÃO faz (fora de escopo)
+- Não limpa as empresas duplicadas no banco (ex: "Com voce, Scala" vs "com você, Scala") — posso fazer numa frente separada se quiser.
+- Não muda o comportamento em produção com auth real (`ctxCompany` continua sendo a fonte primária).
+- Não altera `Onboarding.tsx`.
 
 ### Arquivos afetados
-
 | Arquivo | Ação |
 |---|---|
-| `supabase/migrations/<nova>.sql` | ADD COLUMN `profile_id` + 2 índices |
-| `src/pages/Signup.tsx` | Bloco de adoção + redirect direto para `/candidato` quando candidato |
+| `src/pages/app/CompanyProfile.tsx` | Ordenar fallback + persistir `dev_company_id` em localStorage |
 
-### Guardrails respeitados
-- Empresa/recrutador: fluxo de 2 passos e destino `/verify-email` **inalterados**.
-- `PublicApplication.tsx`, `AuthContext`, `Login.tsx`, `/app/*`: **inalterados**.
-- RLS: **não desativada**, **não alterada**.
-- Adoção restrita ao próprio email + apenas registros sem `profile_id`.
-- Sem DELETE/UPDATE em massa fora da adoção.
-- Usuário órfão `contato@scalagestao.com.br`: **não tocado**.
-
-### Observação para sua decisão futura
-Quando você quiser ativar verificação real de email (produção), reabilitamos confirm no Cloud → Users → Auth Settings e o `/verify-email` volta a fazer sentido para empresa/recrutador também. O fluxo do candidato pode então ser ajustado para também passar por `/verify-email`. Por ora, mantenho candidato indo direto pro app porque é o comportamento real do sistema hoje.
-
+Aguardo aprovação para implementar.
