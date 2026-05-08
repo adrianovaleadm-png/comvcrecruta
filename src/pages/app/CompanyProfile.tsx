@@ -167,6 +167,7 @@ export default function CompanyProfile() {
         .single();
       if (error) throw error;
       setCompanyId(data.id);
+      localStorage.setItem("dev_company_id", data.id);
       setNomeFantasia(novoNomeFantasia.trim());
       setRazaoSocial(novoRazaoSocial.trim());
       setCnpj(novoCnpj.trim());
