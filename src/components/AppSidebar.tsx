@@ -4,6 +4,7 @@ import {
   Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   label: string;
@@ -59,7 +60,18 @@ const sections: NavSection[] = [
 export default function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut();
+      navigate("/login");
+    } else {
+      navigate("/login");
+    }
+    setMobileOpen(false);
+  };
 
   const isActive = (path: string) =>
     path === "/app" ? location.pathname === "/app" : location.pathname.startsWith(path);
@@ -106,13 +118,18 @@ export default function AppSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {user && (profile?.full_name || user.email) && (
+          <div className="px-2.5 py-1 text-xs text-sidebar-muted truncate">
+            {profile?.full_name || user.email}
+          </div>
+        )}
         <button
-          onClick={() => navigate("/login")}
+          onClick={handleAuthAction}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          <span>Login</span>
+          <span>{user ? "Sair" : "Login"}</span>
         </button>
       </div>
     </div>
