@@ -60,7 +60,18 @@ const sections: NavSection[] = [
 export default function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut();
+      navigate("/login");
+    } else {
+      navigate("/login");
+    }
+    setMobileOpen(false);
+  };
 
   const isActive = (path: string) =>
     path === "/app" ? location.pathname === "/app" : location.pathname.startsWith(path);
