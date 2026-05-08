@@ -74,12 +74,26 @@ export default function CompanyProfile() {
     (async () => {
       let id = ctxCompany?.id;
       if (!id) {
-        // Dev fallback: pega a primeira empresa
-        const { data } = await supabase.from("companies").select("id").limit(1).maybeSingle();
-        id = data?.id;
+        // Dev: tenta usar a última empresa selecionada nesta sessão
+        const stored = localStorage.getItem("dev_company_id");
+        if (stored) {
+          const { data } = await supabase.from("companies").select("id").eq("id", stored).maybeSingle();
+          if (data) id = data.id;
+        }
+        // Fallback: empresa mais recente (determinístico)
+        if (!id) {
+          const { data } = await supabase
+            .from("companies")
+            .select("id")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          id = data?.id;
+        }
       }
       if (!id) { setLoading(false); return; }
       setCompanyId(id);
+      localStorage.setItem("dev_company_id", id);
 
       const { data: c } = await supabase.from("companies").select("*").eq("id", id).single();
       if (c) {
@@ -153,6 +167,7 @@ export default function CompanyProfile() {
         .single();
       if (error) throw error;
       setCompanyId(data.id);
+      localStorage.setItem("dev_company_id", data.id);
       setNomeFantasia(novoNomeFantasia.trim());
       setRazaoSocial(novoRazaoSocial.trim());
       setCnpj(novoCnpj.trim());
