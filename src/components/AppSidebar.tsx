@@ -4,6 +4,7 @@ import {
   Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   label: string;
