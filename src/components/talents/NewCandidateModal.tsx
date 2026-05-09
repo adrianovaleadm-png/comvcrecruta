@@ -15,6 +15,7 @@ interface Props {
 
 export default function NewCandidateModal({ open, onClose }: Props) {
   const queryClient = useQueryClient();
+  const companyId = useCurrentCompanyId();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
