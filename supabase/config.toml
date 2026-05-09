@@ -1,1 +1,28 @@
 project_id = "xdgxplkzsfzmdmdwyfkz"
+
+# Funções privadas — exigem JWT de usuário autenticado.
+# Dentro de cada função há também uma checagem extra que rejeita
+# tokens anônimos (a anon key sozinha não é suficiente).
+[functions.generate-job-description]
+verify_jwt = true
+
+[functions.generate-screening-questions]
+verify_jwt = true
+
+[functions.parse-resume]
+verify_jwt = true
+
+[functions.get-dashboard-overview]
+verify_jwt = true
+
+[functions.get-funnel-metrics]
+verify_jwt = true
+
+[functions.send-stage-notification]
+verify_jwt = true
+
+# Função pública — chamada pela página de candidatura sem login.
+# Validação adicional é feita dentro da função (candidate_id + job_id
+# precisam existir na mesma application).
+[functions.score-candidate-job]
+verify_jwt = false
