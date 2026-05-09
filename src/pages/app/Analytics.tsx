@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart3, ArrowRight, Clock, Users, TrendingUp, CheckCircle, XCircle } from "lucide-react";
@@ -16,14 +17,17 @@ export default function Analytics() {
   const [jobId, setJobId] = useState<string>("");
   const [metrics, setMetrics] = useState<FunnelMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const companyId = useCurrentCompanyId();
 
   const { data: jobs } = useQuery({
-    queryKey: ["all-jobs-analytics"],
+    queryKey: ["all-jobs-analytics", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("jobs").select("id, title").order("created_at", { ascending: false });
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("jobs").select("id, title").eq("company_id", companyId).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   useEffect(() => {
