@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
