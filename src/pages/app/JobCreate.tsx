@@ -47,6 +47,7 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 
 export default function JobCreate() {
   const navigate = useNavigate();
+  const companyId = useCurrentCompanyId();
   const [isGenerating, setIsGenerating] = useState(false);
   const lastCallRef = useRef(0);
   const [screeningQuestions, setScreeningQuestions] = useState<ScreeningQuestion[]>([]);
@@ -57,12 +58,14 @@ export default function JobCreate() {
   const [savingTemplate, setSavingTemplate] = useState(false);
 
   const { data: templates } = useQuery({
-    queryKey: ["job-templates"],
+    queryKey: ["job-templates", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("job_templates").select("*").order("created_at", { ascending: false });
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("job_templates").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const loadTemplate = (template: any) => {
