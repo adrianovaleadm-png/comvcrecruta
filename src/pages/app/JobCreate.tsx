@@ -84,9 +84,11 @@ export default function JobCreate() {
   const saveAsTemplate = async () => {
     const values = form.getValues();
     if (!values.title.trim()) { toast.error("Preencha o título."); return; }
+    if (!companyId) { toast.error("Selecione uma empresa primeiro."); return; }
     setSavingTemplate(true);
     try {
       const { error } = await supabase.from("job_templates").insert({
+        company_id: companyId,
         title: values.title, description: values.description || null,
         seniority: values.seniority || null, work_model: values.work_model || null,
         department: values.department || null,
