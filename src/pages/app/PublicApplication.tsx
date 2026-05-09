@@ -81,6 +81,7 @@ export default function PublicApplication() {
         candidateId = existing.id;
       } else {
         const { data: newC, error } = await supabase.from("candidates").insert({
+          company_id: (job as any).company_id,
           name: name.trim(), email: email.trim(), phone: phone.trim() || null,
           city: city.trim() || null, linkedin_url: linkedinUrl.trim() || null,
         }).select("id").single();
