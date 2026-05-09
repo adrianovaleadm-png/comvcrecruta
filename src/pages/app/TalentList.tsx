@@ -16,6 +16,7 @@ export default function TalentList() {
   const [modalOpen, setModalOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const companyId = useCurrentCompanyId();
 
   const handleSearch = useCallback((value: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -23,11 +24,13 @@ export default function TalentList() {
   }, []);
 
   const { data: candidates, isLoading } = useQuery({
-    queryKey: ["talents", debouncedSearch, tagFilter],
+    queryKey: ["talents", debouncedSearch, tagFilter, companyId],
     queryFn: async () => {
+      if (!companyId) return [];
       let query = supabase
         .from("candidates")
         .select("*, candidate_tags(tag_id, tags(id, name))")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false });
 
       if (debouncedSearch) {
@@ -44,15 +47,18 @@ export default function TalentList() {
       }
       return data;
     },
+    enabled: !!companyId,
   });
 
   const { data: allTags } = useQuery({
-    queryKey: ["all-tags"],
+    queryKey: ["all-tags", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tags").select("*").order("name");
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("tags").select("*").eq("company_id", companyId).order("name");
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   return (
