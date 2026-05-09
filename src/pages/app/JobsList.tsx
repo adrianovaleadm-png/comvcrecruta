@@ -27,13 +27,16 @@ const statusLabels: Record<string, string> = {
 export default function JobsList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const companyId = useCurrentCompanyId();
 
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ["jobs", search, statusFilter],
+    queryKey: ["jobs", search, statusFilter, companyId],
     queryFn: async () => {
+      if (!companyId) return [];
       let query = supabase
         .from("jobs")
         .select("*")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false });
 
       if (statusFilter !== "all") {
@@ -47,6 +50,7 @@ export default function JobsList() {
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   return (
