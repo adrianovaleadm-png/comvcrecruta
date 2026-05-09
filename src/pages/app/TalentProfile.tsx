@@ -177,13 +177,17 @@ export default function TalentProfile() {
     if (!newTag.trim()) return;
     setAddingTag(true);
     try {
-      // Upsert tag
+      // Upsert tag (per company)
       let tagId: string;
-      const { data: existing } = await supabase.from("tags").select("id").eq("name", newTag.trim()).maybeSingle();
+      const tagCompanyId = companyId || (candidate as any)?.company_id;
+      if (!tagCompanyId) { toast.error("Empresa não encontrada."); setAddingTag(false); return; }
+      const { data: existing } = await supabase
+        .from("tags").select("id").eq("name", newTag.trim()).eq("company_id", tagCompanyId).maybeSingle();
       if (existing) {
         tagId = existing.id;
       } else {
-        const { data: created, error } = await supabase.from("tags").insert({ name: newTag.trim() }).select("id").single();
+        const { data: created, error } = await supabase
+          .from("tags").insert({ name: newTag.trim(), company_id: tagCompanyId }).select("id").single();
         if (error) throw error;
         tagId = created.id;
       }
