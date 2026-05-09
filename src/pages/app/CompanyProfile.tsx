@@ -174,7 +174,11 @@ export default function CompanyProfile() {
       toast.success("Empresa criada! Complete o perfil abaixo.");
       await refreshProfile();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao criar empresa.");
+      if (err.code === "23505" && String(err.message).toLowerCase().includes("cnpj")) {
+        toast.error("Já existe uma empresa cadastrada com este CNPJ.");
+      } else {
+        toast.error(err.message || "Erro ao criar empresa.");
+      }
     } finally {
       setCreating(false);
     }
