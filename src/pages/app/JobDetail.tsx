@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Briefcase, Calendar, Kanban, Trophy, ClipboardList, SlidersHorizontal, Users, Building, GraduationCap, Monitor, DollarSign, CalendarClock, Link2, ExternalLink } from "lucide-react";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 import { toast } from "sonner";
+import { getPublicJobUrl } from "@/lib/publicUrl";
 
 const statusLabels: Record<string, string> = {
   open: "Aberta",
