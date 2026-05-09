@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef } from "react";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { ArrowLeft, Save, Plus, X, Upload, FileText, ExternalLink, Briefcase, ClipboardCheck, Sparkles, Mail, ArrowRightLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
