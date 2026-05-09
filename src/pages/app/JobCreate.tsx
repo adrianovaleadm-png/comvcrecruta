@@ -134,9 +134,11 @@ export default function JobCreate() {
 
   const createJob = useMutation({
     mutationFn: async (values: JobFormValues) => {
+      if (!companyId) throw new Error("Selecione uma empresa primeiro.");
       const { data, error } = await supabase
         .from("jobs")
         .insert({
+          company_id: companyId,
           title: values.title,
           description: values.description || null,
           location: values.location || null,
