@@ -229,7 +229,11 @@ export default function CompanyProfile() {
       toast.success("Perfil da empresa salvo com sucesso!");
       await refreshProfile();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar.");
+      if (err.code === "23505" && String(err.message).toLowerCase().includes("cnpj")) {
+        toast.error("Já existe outra empresa cadastrada com este CNPJ.");
+      } else {
+        toast.error(err.message || "Erro ao salvar.");
+      }
     } finally {
       setSaving(false);
     }
