@@ -16,6 +16,7 @@ import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
 export default function TalentProfile() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const companyId = useCurrentCompanyId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
