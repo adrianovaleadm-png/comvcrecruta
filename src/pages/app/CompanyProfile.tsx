@@ -79,6 +79,7 @@ export default function CompanyProfile() {
         if (stored) {
           const { data } = await supabase.from("companies").select("id").eq("id", stored).maybeSingle();
           if (data) id = data.id;
+          else localStorage.removeItem("dev_company_id");
         }
         // Fallback: empresa mais recente (determinístico)
         if (!id) {
