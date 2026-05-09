@@ -267,14 +267,17 @@ export default function TalentProfile() {
 
         // Auto-add skills as tags
         if (data.skills?.length > 0) {
-          for (const skill of data.skills.slice(0, 10)) {
-            try {
-              const { data: existing } = await supabase.from("tags").select("id").eq("name", skill).maybeSingle();
-              const tagId = existing?.id || (await supabase.from("tags").insert({ name: skill }).select("id").single()).data?.id;
-              if (tagId) await supabase.from("candidate_tags").insert({ candidate_id: id!, tag_id: tagId }).then(() => {});
-            } catch {}
+          const tagCompanyId = companyId || (candidate as any)?.company_id;
+          if (tagCompanyId) {
+            for (const skill of data.skills.slice(0, 10)) {
+              try {
+                const { data: existing } = await supabase.from("tags").select("id").eq("name", skill).eq("company_id", tagCompanyId).maybeSingle();
+                const tagId = existing?.id || (await supabase.from("tags").insert({ name: skill, company_id: tagCompanyId }).select("id").single()).data?.id;
+                if (tagId) await supabase.from("candidate_tags").insert({ candidate_id: id!, tag_id: tagId }).then(() => {});
+              } catch {}
+            }
+            queryClient.invalidateQueries({ queryKey: ["talent-tags", id] });
           }
-          queryClient.invalidateQueries({ queryKey: ["talent-tags", id] });
         }
       } else {
         toast.info("Não foi possível extrair dados deste arquivo.");
