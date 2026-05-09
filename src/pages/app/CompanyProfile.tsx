@@ -79,6 +79,7 @@ export default function CompanyProfile() {
         if (stored) {
           const { data } = await supabase.from("companies").select("id").eq("id", stored).maybeSingle();
           if (data) id = data.id;
+          else localStorage.removeItem("dev_company_id");
         }
         // Fallback: empresa mais recente (determinístico)
         if (!id) {
@@ -174,7 +175,11 @@ export default function CompanyProfile() {
       toast.success("Empresa criada! Complete o perfil abaixo.");
       await refreshProfile();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao criar empresa.");
+      if (err.code === "23505" && String(err.message).toLowerCase().includes("cnpj")) {
+        toast.error("Já existe uma empresa cadastrada com este CNPJ.");
+      } else {
+        toast.error(err.message || "Erro ao criar empresa.");
+      }
     } finally {
       setCreating(false);
     }
@@ -225,7 +230,11 @@ export default function CompanyProfile() {
       toast.success("Perfil da empresa salvo com sucesso!");
       await refreshProfile();
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar.");
+      if (err.code === "23505" && String(err.message).toLowerCase().includes("cnpj")) {
+        toast.error("Já existe outra empresa cadastrada com este CNPJ.");
+      } else {
+        toast.error(err.message || "Erro ao salvar.");
+      }
     } finally {
       setSaving(false);
     }
