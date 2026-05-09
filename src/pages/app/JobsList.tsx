@@ -133,7 +133,7 @@ export default function JobsList() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          const url = `${window.location.origin}/vaga/${job.id}/candidatar`;
+                          const url = getPublicJobUrl(job.id);
                           navigator.clipboard.writeText(url);
                           toast.success("Link público copiado!", { description: url });
                         }}
