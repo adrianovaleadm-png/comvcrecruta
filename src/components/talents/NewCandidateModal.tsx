@@ -30,10 +30,12 @@ export default function NewCandidateModal({ open, onClose }: Props) {
   const handleSave = async () => {
     if (!name.trim()) { toast.error("Nome é obrigatório."); return; }
     if (!email.trim() || !email.includes("@")) { toast.error("Email válido é obrigatório."); return; }
+    if (!companyId) { toast.error("Selecione uma empresa primeiro."); return; }
 
     setSaving(true);
     try {
       const { error } = await supabase.from("candidates").insert({
+        company_id: companyId,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,
