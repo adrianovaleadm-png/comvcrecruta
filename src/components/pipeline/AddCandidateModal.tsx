@@ -139,9 +139,12 @@ export default function AddCandidateModal({ open, onClose, jobId, stages }: Prop
         if (existing) {
           candidateId = existing.id;
         } else {
+          // Get company_id from the job
+          const { data: jobRow } = await supabase.from("jobs").select("company_id").eq("id", jobId).single();
+          if (!jobRow?.company_id) throw new Error("Vaga sem empresa vinculada.");
           const { data: newC, error } = await supabase
             .from("candidates")
-            .insert({ name: name.trim(), email: email.trim(), phone: phone.trim() || null })
+            .insert({ company_id: jobRow.company_id, name: name.trim(), email: email.trim(), phone: phone.trim() || null })
             .select("id").single();
           if (error) throw error;
           candidateId = newC.id;
