@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Briefcase, Link2 } from "lucide-react";
 import { toast } from "sonner";
+import { getPublicJobUrl } from "@/lib/publicUrl";
 
 const statusColors: Record<string, string> = {
   open: "bg-success/10 text-success border-success/30",
