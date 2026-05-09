@@ -27,6 +27,7 @@ interface Stage {
 
 export default function AssignToJobModal({ open, onClose, candidateId }: Props) {
   const queryClient = useQueryClient();
+  const companyId = useCurrentCompanyId();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJob, setSelectedJob] = useState<string>("");
   const [stages, setStages] = useState<Stage[]>([]);
@@ -34,11 +35,11 @@ export default function AssignToJobModal({ open, onClose, candidateId }: Props) 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !companyId) return;
     setSelectedJob(""); setSelectedStage(""); setStages([]);
-    supabase.from("jobs").select("id, title, status").eq("status", "open").order("created_at", { ascending: false })
+    supabase.from("jobs").select("id, title, status").eq("status", "open").eq("company_id", companyId).order("created_at", { ascending: false })
       .then(({ data }) => setJobs(data || []));
-  }, [open]);
+  }, [open, companyId]);
 
   useEffect(() => {
     if (!selectedJob) { setStages([]); setSelectedStage(""); return; }
