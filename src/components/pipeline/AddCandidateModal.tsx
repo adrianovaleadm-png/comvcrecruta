@@ -88,14 +88,18 @@ export default function AddCandidateModal({ open, onClose, jobId, stages }: Prop
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     searchDebounce.current = setTimeout(async () => {
+      // Scope candidate search to the job's company
+      const { data: jobRow } = await supabase.from("jobs").select("company_id").eq("id", jobId).single();
+      if (!jobRow?.company_id) { setSearchResults([]); return; }
       const { data } = await supabase
         .from("candidates")
         .select("*")
+        .eq("company_id", jobRow.company_id)
         .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
         .limit(10);
       setSearchResults(data || []);
     }, 300);
-  }, [searchQuery]);
+  }, [searchQuery, jobId]);
 
   const validateStep1 = (): boolean => {
     if (tab === "new") {
@@ -139,9 +143,12 @@ export default function AddCandidateModal({ open, onClose, jobId, stages }: Prop
         if (existing) {
           candidateId = existing.id;
         } else {
+          // Get company_id from the job
+          const { data: jobRow } = await supabase.from("jobs").select("company_id").eq("id", jobId).single();
+          if (!jobRow?.company_id) throw new Error("Vaga sem empresa vinculada.");
           const { data: newC, error } = await supabase
             .from("candidates")
-            .insert({ name: name.trim(), email: email.trim(), phone: phone.trim() || null })
+            .insert({ company_id: jobRow.company_id, name: name.trim(), email: email.trim(), phone: phone.trim() || null })
             .select("id").single();
           if (error) throw error;
           candidateId = newC.id;

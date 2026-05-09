@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ interface Props {
 
 export default function NewCandidateModal({ open, onClose }: Props) {
   const queryClient = useQueryClient();
+  const companyId = useCurrentCompanyId();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,10 +30,12 @@ export default function NewCandidateModal({ open, onClose }: Props) {
   const handleSave = async () => {
     if (!name.trim()) { toast.error("Nome é obrigatório."); return; }
     if (!email.trim() || !email.includes("@")) { toast.error("Email válido é obrigatório."); return; }
+    if (!companyId) { toast.error("Selecione uma empresa primeiro."); return; }
 
     setSaving(true);
     try {
       const { error } = await supabase.from("candidates").insert({
+        company_id: companyId,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || null,

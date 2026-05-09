@@ -254,6 +254,7 @@ export type Database = {
       candidates: {
         Row: {
           city: string | null
+          company_id: string
           created_at: string
           email: string
           id: string
@@ -265,6 +266,7 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          company_id: string
           created_at?: string
           email: string
           id?: string
@@ -276,6 +278,7 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          company_id?: string
           created_at?: string
           email?: string
           id?: string
@@ -286,6 +289,13 @@ export type Database = {
           summary?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "candidates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "candidates_profile_id_fkey"
             columns: ["profile_id"]
@@ -426,6 +436,7 @@ export type Database = {
       }
       job_templates: {
         Row: {
+          company_id: string
           created_at: string
           department: string | null
           description: string | null
@@ -439,6 +450,7 @@ export type Database = {
           work_model: string | null
         }
         Insert: {
+          company_id: string
           created_at?: string
           department?: string | null
           description?: string | null
@@ -452,6 +464,7 @@ export type Database = {
           work_model?: string | null
         }
         Update: {
+          company_id?: string
           created_at?: string
           department?: string | null
           description?: string | null
@@ -464,10 +477,19 @@ export type Database = {
           updated_at?: string
           work_model?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "job_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       jobs: {
         Row: {
+          company_id: string
           created_at: string
           deadline: string | null
           department: string | null
@@ -487,6 +509,7 @@ export type Database = {
           work_model: string | null
         }
         Insert: {
+          company_id: string
           created_at?: string
           deadline?: string | null
           department?: string | null
@@ -506,6 +529,7 @@ export type Database = {
           work_model?: string | null
         }
         Update: {
+          company_id?: string
           created_at?: string
           deadline?: string | null
           department?: string | null
@@ -524,7 +548,15 @@ export type Database = {
           updated_at?: string
           work_model?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -717,18 +749,29 @@ export type Database = {
       }
       tags: {
         Row: {
+          company_id: string
           id: string
           name: string
         }
         Insert: {
+          company_id: string
           id?: string
           name: string
         }
         Update: {
+          company_id?: string
           id?: string
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tags_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

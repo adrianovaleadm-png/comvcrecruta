@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,6 +47,7 @@ const DEFAULT_WEIGHTS: ScoreWeights = {
 
 export default function JobCreate() {
   const navigate = useNavigate();
+  const companyId = useCurrentCompanyId();
   const [isGenerating, setIsGenerating] = useState(false);
   const lastCallRef = useRef(0);
   const [screeningQuestions, setScreeningQuestions] = useState<ScreeningQuestion[]>([]);
@@ -56,12 +58,14 @@ export default function JobCreate() {
   const [savingTemplate, setSavingTemplate] = useState(false);
 
   const { data: templates } = useQuery({
-    queryKey: ["job-templates"],
+    queryKey: ["job-templates", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("job_templates").select("*").order("created_at", { ascending: false });
+      if (!companyId) return [];
+      const { data, error } = await supabase.from("job_templates").select("*").eq("company_id", companyId).order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    enabled: !!companyId,
   });
 
   const loadTemplate = (template: any) => {
@@ -80,9 +84,11 @@ export default function JobCreate() {
   const saveAsTemplate = async () => {
     const values = form.getValues();
     if (!values.title.trim()) { toast.error("Preencha o título."); return; }
+    if (!companyId) { toast.error("Selecione uma empresa primeiro."); return; }
     setSavingTemplate(true);
     try {
       const { error } = await supabase.from("job_templates").insert({
+        company_id: companyId,
         title: values.title, description: values.description || null,
         seniority: values.seniority || null, work_model: values.work_model || null,
         department: values.department || null,
@@ -128,9 +134,11 @@ export default function JobCreate() {
 
   const createJob = useMutation({
     mutationFn: async (values: JobFormValues) => {
+      if (!companyId) throw new Error("Selecione uma empresa primeiro.");
       const { data, error } = await supabase
         .from("jobs")
         .insert({
+          company_id: companyId,
           title: values.title,
           description: values.description || null,
           location: values.location || null,
