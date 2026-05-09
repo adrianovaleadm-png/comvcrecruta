@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Link } from "react-router-dom";
 import { Search, Plus, MapPin, Mail, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
