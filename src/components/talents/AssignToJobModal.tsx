@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCurrentCompanyId } from "@/hooks/useCurrentCompanyId";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
