@@ -23,8 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables (NUNCA commitar — usar .env.example como template)
-.env
+# Environment variables
+# .env é versionado (apenas chaves Supabase publicas/anon — public por design no Vite).
+# Lovable lê dele para o build do preview. Se você precisar de valores diferentes
+# localmente (ex: apontar para outro projeto Supabase de teste), use .env.local.
+# NUNCA coloque service_role keys, OpenAI/Stripe keys etc. aqui — esses ficam
+# nas Edge Function Secrets da Supabase.
 .env.local
 .env.*.local
 
