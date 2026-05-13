@@ -64,6 +64,7 @@ export default function PublicApplication() {
 
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim()) { toast.error("Nome e email são obrigatórios."); return; }
+    if (!id || !job) { toast.error("Vaga não encontrada."); return; }
     if (questions) {
       for (const q of questions) {
         if ((q as any).required && !answers[q.id]?.trim()) {
@@ -74,6 +75,20 @@ export default function PublicApplication() {
 
     setSaving(true);
     try {
+      // Re-busca company_id no momento do submit (evita cache stale do React Query).
+      const { data: jobFresh, error: jobFreshErr } = await supabase
+        .from("jobs")
+        .select("company_id")
+        .eq("id", id)
+        .single();
+      if (jobFreshErr || !jobFresh?.company_id) {
+        console.error("Vaga sem company_id:", { jobFreshErr, jobFresh, jobInMemory: job });
+        toast.error("Esta vaga não está disponível para candidaturas.");
+        setSaving(false);
+        return;
+      }
+      const companyId = jobFresh.company_id;
+
       // Upsert candidate
       let candidateId: string;
       const { data: existing } = await supabase.from("candidates").select("id").eq("email", email.trim()).maybeSingle();
@@ -81,7 +96,7 @@ export default function PublicApplication() {
         candidateId = existing.id;
       } else {
         const { data: newC, error } = await supabase.from("candidates").insert({
-          company_id: (job as any).company_id,
+          company_id: companyId,
           name: name.trim(), email: email.trim(), phone: phone.trim() || null,
           city: city.trim() || null, linkedin_url: linkedinUrl.trim() || null,
         }).select("id").single();
