@@ -35,6 +35,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getCandidateFileSignedUrl } from "@/lib/candidateFiles";
 import FitScoreBadge from "./FitScoreBadge";
 import CandidateActionsPanel from "./CandidateActionsPanel";
 
@@ -311,18 +312,21 @@ export default function CandidateDrawer({
                 </div>
 
                 {cv && (
-                  <a
-                    href={cv.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm hover:border-primary/50"
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = await getCandidateFileSignedUrl(cv.url);
+                      if (url) window.open(url, "_blank", "noopener,noreferrer");
+                      else toast.error("Não foi possível abrir o currículo.");
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm hover:border-primary/50 text-left"
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 truncate text-foreground">
                       {cv.name || "Currículo"}
                     </span>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                  </a>
+                  </button>
                 )}
 
                 {candidate?.summary && (

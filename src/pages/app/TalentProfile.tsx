@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import AssignToJobModal from "@/components/talents/AssignToJobModal";
 import FitScoreBadge from "@/components/pipeline/FitScoreBadge";
+import { getCandidateFileSignedUrl } from "@/lib/candidateFiles";
 
 export default function TalentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -224,12 +225,13 @@ export default function TalentProfile() {
       const path = `${id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("candidate-files").upload(path, file);
       if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from("candidate-files").getPublicUrl(path);
 
+      // Bucket e privado (LGPD). Armazenamos apenas o path; URLs sao geradas
+      // sob demanda via getCandidateFileSignedUrl().
       const { error } = await supabase.from("candidate_files").insert({
         candidate_id: id!,
         type: "cv",
-        url: urlData.publicUrl,
+        url: path,
         name: file.name,
       });
       if (error) throw error;
@@ -243,11 +245,19 @@ export default function TalentProfile() {
     }
   };
 
-  const handleParseResume = async (fileUrl: string) => {
+  const handleParseResume = async (filePath: string) => {
     setParsing(true);
     try {
+      // Gera signed URL fresca (1h) para a edge function conseguir baixar
+      // o arquivo do bucket privado.
+      const signedUrl = await getCandidateFileSignedUrl(filePath);
+      if (!signedUrl) {
+        toast.error("Não foi possível acessar o arquivo.");
+        setParsing(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("parse-resume", {
-        body: { file_url: fileUrl },
+        body: { file_url: signedUrl },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -517,11 +527,19 @@ export default function TalentProfile() {
             <div className="space-y-2">
               {files?.map((f: any) => (
                 <div key={f.id} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
-                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex flex-1 items-center gap-2 text-foreground hover:text-primary transition-colors">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = await getCandidateFileSignedUrl(f.url);
+                      if (url) window.open(url, "_blank", "noopener,noreferrer");
+                      else toast.error("Não foi possível abrir o arquivo.");
+                    }}
+                    className="flex flex-1 items-center gap-2 text-left text-foreground hover:text-primary transition-colors"
+                  >
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 truncate">{f.name || "Arquivo"}</span>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                  </a>
+                  </button>
                   <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" disabled={parsing} onClick={() => handleParseResume(f.url)}>
                     <Sparkles className={`h-3 w-3 ${parsing ? "animate-spin" : ""}`} /> {parsing ? "..." : "Extrair"}
                   </Button>
