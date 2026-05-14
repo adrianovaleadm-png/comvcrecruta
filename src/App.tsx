@@ -11,6 +11,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
 import CandidatoPlaceholder from "./pages/CandidatoPlaceholder";
 import Carreiras from "./pages/Carreiras";
+import PoliticaPrivacidade from "./pages/PoliticaPrivacidade";
 import AppLayout from "./pages/AppLayout";
 import Painel from "./pages/app/Painel";
 import PlaceholderPage from "./pages/app/PlaceholderPage";
@@ -39,6 +40,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/candidato" element={<CandidatoPlaceholder />} />
       <Route path="/carreiras" element={<Carreiras />} />
+      <Route path="/politica-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/vaga/:id/candidatar" element={<PublicApplication />} />
 
       <Route path="/app" element={<ProtectedRoute />}>

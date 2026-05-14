@@ -13,6 +13,10 @@ import { Briefcase, MapPin, GraduationCap, Monitor, CheckCircle, Building2, Hear
 const seniorityLabels: Record<string, string> = { junior: "Júnior", pleno: "Pleno", senior: "Sênior", specialist: "Especialista", lead: "Liderança" };
 const workModelLabels: Record<string, string> = { presencial: "Presencial", hibrido: "Híbrido", remoto: "Remoto" };
 
+// Versao da Politica de Privacidade vigente.
+// Bump esta string sempre que mudar o texto em /politica-privacidade.
+const CONSENT_VERSION = "v1-2026-05-14";
+
 export default function PublicApplication() {
   const { id } = useParams<{ id: string }>();
   const [submitted, setSubmitted] = useState(false);
@@ -23,6 +27,7 @@ export default function PublicApplication() {
   const [city, setCity] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [consentAccepted, setConsentAccepted] = useState(false);
 
   const { data: job, isLoading: jobLoading } = useQuery({
     queryKey: ["public-job", id],
@@ -65,6 +70,10 @@ export default function PublicApplication() {
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim()) { toast.error("Nome e email são obrigatórios."); return; }
     if (!id || !job) { toast.error("Vaga não encontrada."); return; }
+    if (!consentAccepted) {
+      toast.error("Para enviar a candidatura, aceite a Política de Privacidade.");
+      return;
+    }
     if (questions) {
       for (const q of questions) {
         if ((q as any).required && !answers[q.id]?.trim()) {
@@ -109,7 +118,9 @@ export default function PublicApplication() {
 
       const { data: app, error: appErr } = await supabase.from("applications").insert({
         job_id: id!, candidate_id: candidateId, stage_id: firstStageId, status: "active",
-      }).select("id").single();
+        consent_accepted_at: new Date().toISOString(),
+        consent_version: CONSENT_VERSION,
+      } as any).select("id").single();
       if (appErr) throw appErr;
 
       // Save screening answers
@@ -275,7 +286,32 @@ export default function PublicApplication() {
           </div>
         )}
 
-        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving}>
+        {/* LGPD consent */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentAccepted}
+              onChange={(e) => setConsentAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer flex-shrink-0"
+            />
+            <span className="text-xs text-muted-foreground leading-relaxed">
+              Li e aceito a{" "}
+              <a
+                href="/politica-privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-medium hover:underline"
+              >
+                Política de Privacidade
+              </a>{" "}
+              e autorizo o tratamento dos meus dados pessoais para fins de recrutamento e seleção,
+              nos termos da LGPD (Lei nº 13.709/2018).
+            </span>
+          </label>
+        </div>
+
+        <Button className="w-full" size="lg" onClick={handleSubmit} disabled={saving || !consentAccepted}>
           {saving ? "Enviando..." : "Enviar Candidatura"}
         </Button>
       </div>
