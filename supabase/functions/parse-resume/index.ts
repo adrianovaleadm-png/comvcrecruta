@@ -30,9 +30,15 @@ serve(async (req) => {
     const { file_url } = await req.json();
     if (!file_url) return jsonResp({ error: "file_url é obrigatório" }, 400);
 
-    // SSRF guard: aceita apenas URLs do bucket candidate-files do projeto.
-    const allowedPrefix = `${SUPABASE_URL}/storage/v1/object/public/candidate-files/`;
-    if (typeof file_url !== "string" || !file_url.startsWith(allowedPrefix)) {
+    // SSRF guard: aceita apenas URLs do bucket candidate-files do projeto,
+    // tanto no formato public quanto signed (apos a Etapa D o bucket eh privado
+    // e o front-end gera signed URLs antes de chamar esta funcao).
+    const publicPrefix = `${SUPABASE_URL}/storage/v1/object/public/candidate-files/`;
+    const signedPrefix = `${SUPABASE_URL}/storage/v1/object/sign/candidate-files/`;
+    if (
+      typeof file_url !== "string" ||
+      (!file_url.startsWith(publicPrefix) && !file_url.startsWith(signedPrefix))
+    ) {
       return jsonResp({ error: "URL inválida — apenas arquivos do bucket candidate-files são aceitos" }, 400);
     }
 
