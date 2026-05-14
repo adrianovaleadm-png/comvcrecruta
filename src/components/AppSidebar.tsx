@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Briefcase, MessageSquare, Building2,
-  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart
+  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart, Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,8 +81,8 @@ export default function AppSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-accent-foreground">
-            R
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-primary-foreground" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">com você, Recruta.</p>
