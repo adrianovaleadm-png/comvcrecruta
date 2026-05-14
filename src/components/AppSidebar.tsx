@@ -85,8 +85,8 @@ export default function AppSidebar() {
             R
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">Recrutamento Inteligente</p>
-            <p className="text-[11px] text-sidebar-muted truncate">Modo desenvolvimento</p>
+            <p className="text-sm font-semibold truncate">com você, Recruta.</p>
+            <p className="text-[11px] text-sidebar-muted truncate">Recrutamento e Seleção</p>
           </div>
         </div>
       </div>
