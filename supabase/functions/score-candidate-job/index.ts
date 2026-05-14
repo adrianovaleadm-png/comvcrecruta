@@ -21,6 +21,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Validação anti-abuso: o par (candidate_id, job_id) precisa existir
+    // como uma application real. Esta função é pública (chamada da página
+    // de candidatura sem login) — sem essa checagem, qualquer um poderia
+    // pingar a função com IDs aleatórios e gastar créditos da IA.
+    const { data: appExists } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("candidate_id", candidate_id)
+      .eq("job_id", job_id)
+      .maybeSingle();
+    if (!appExists) return jsonResp({ error: "Candidatura não encontrada" }, 404);
+
     // Fetch candidate + tags
     const { data: candidate, error: cErr } = await supabase
       .from("candidates")

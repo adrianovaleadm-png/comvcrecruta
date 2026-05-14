@@ -18,6 +18,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Auth guard: rejeita anônimos (a anon key isolada não basta).
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user }, error: authErr } = await authClient.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    if (authErr || !user || user.aud !== "authenticated") {
+      return new Response(JSON.stringify({ error: "Não autorizado" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { application_id, new_stage_id } = (await req.json()) as Payload;
     if (!application_id || !new_stage_id) {
       return new Response(JSON.stringify({ error: "application_id e new_stage_id são obrigatórios" }), {
@@ -27,7 +46,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
+      SUPABASE_URL,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 

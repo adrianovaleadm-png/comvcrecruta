@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,8 +14,27 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Auth guard: rejeita anônimos (a anon key isolada não basta).
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) return jsonResp({ error: "Não autorizado" }, 401);
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: { user }, error: authErr } = await authClient.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+    if (authErr || !user || user.aud !== "authenticated") {
+      return jsonResp({ error: "Não autorizado" }, 401);
+    }
+
     const { file_url } = await req.json();
     if (!file_url) return jsonResp({ error: "file_url é obrigatório" }, 400);
+
+    // SSRF guard: aceita apenas URLs do bucket candidate-files do projeto.
+    const allowedPrefix = `${SUPABASE_URL}/storage/v1/object/public/candidate-files/`;
+    if (typeof file_url !== "string" || !file_url.startsWith(allowedPrefix)) {
+      return jsonResp({ error: "URL inválida — apenas arquivos do bucket candidate-files são aceitos" }, 400);
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return jsonResp({ error: "LOVABLE_API_KEY não configurada" }, 500);
