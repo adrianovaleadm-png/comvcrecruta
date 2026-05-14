@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, User, Search } from "lucide-react";
+import { Building2, User, Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const userTypes = [
@@ -41,11 +41,16 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="text-center mb-12 animate-fade-in">
+        <div className="flex items-center justify-center mb-5">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md">
+            <Sparkles className="w-7 h-7 text-primary-foreground" />
+          </div>
+        </div>
         <h1 className="text-4xl font-bold text-foreground mb-3">
-          Recrutamento <span className="text-primary">Inteligente</span>
+          com você, <span className="text-primary">Recruta.</span>
         </h1>
         <p className="text-muted-foreground text-lg max-w-md mx-auto">
-          Plataforma completa de recrutamento e seleção. Escolha seu perfil para começar.
+          Recrutamento e seleção com inteligência. Escolha seu perfil para começar.
         </p>
       </div>
 
