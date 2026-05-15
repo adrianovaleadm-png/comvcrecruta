@@ -92,6 +92,8 @@ export type Database = {
       applications: {
         Row: {
           candidate_id: string | null
+          consent_accepted_at: string | null
+          consent_version: string | null
           created_at: string
           id: string
           job_id: string
@@ -101,6 +103,8 @@ export type Database = {
         }
         Insert: {
           candidate_id?: string | null
+          consent_accepted_at?: string | null
+          consent_version?: string | null
           created_at?: string
           id?: string
           job_id: string
@@ -110,6 +114,8 @@ export type Database = {
         }
         Update: {
           candidate_id?: string | null
+          consent_accepted_at?: string | null
+          consent_version?: string | null
           created_at?: string
           id?: string
           job_id?: string
