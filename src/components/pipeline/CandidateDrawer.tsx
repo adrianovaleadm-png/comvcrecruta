@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { getCandidateFileSignedUrl } from "@/lib/candidateFiles";
 import FitScoreBadge from "./FitScoreBadge";
 import CandidateActionsPanel from "./CandidateActionsPanel";
+import SuggestedQuestions from "./SuggestedQuestions";
 
 interface Stage {
   id: string;
@@ -266,10 +267,13 @@ export default function CandidateDrawer({
             </SheetHeader>
 
             <Tabs defaultValue="resumo" className="mt-4">
-              <TabsList className="grid grid-cols-4">
+              <TabsList className="grid grid-cols-5">
                 <TabsTrigger value="resumo">Resumo</TabsTrigger>
                 <TabsTrigger value="score">Score</TabsTrigger>
                 <TabsTrigger value="triagem">Triagem</TabsTrigger>
+                <TabsTrigger value="perguntas" className="gap-1">
+                  <Sparkles className="h-3 w-3" /> IA
+                </TabsTrigger>
                 <TabsTrigger value="processo">Processo</TabsTrigger>
               </TabsList>
 
@@ -443,6 +447,21 @@ export default function CandidateDrawer({
                       </div>
                     </div>
                   ))
+                )}
+              </TabsContent>
+
+              {/* PERGUNTAS SUGERIDAS POR IA */}
+              <TabsContent value="perguntas" className="space-y-3 pt-3">
+                {candidateId && (app as any)?.stages?.name ? (
+                  <SuggestedQuestions
+                    candidateId={candidateId}
+                    jobId={jobId}
+                    stageName={(app as any).stages.name}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                    Carregando contexto do candidato...
+                  </div>
                 )}
               </TabsContent>
 

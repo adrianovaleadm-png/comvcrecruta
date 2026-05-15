@@ -18,6 +18,9 @@ verify_jwt = true
 [functions.get-funnel-metrics]
 verify_jwt = true
 
+[functions.generate-interview-questions]
+verify_jwt = true
+
 [functions.send-stage-notification]
 verify_jwt = true
 
