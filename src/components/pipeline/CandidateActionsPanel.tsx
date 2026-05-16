@@ -1,9 +1,19 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Target, CheckCircle2, User, AlertTriangle } from "lucide-react";
+import { Clock, Target, CheckCircle2, User, AlertTriangle, Calendar } from "lucide-react";
+import ScheduleInterviewModal from "./ScheduleInterviewModal";
+
+/**
+ * Acoes do checklist relacionadas a agendamento de entrevista/call.
+ * Quando o usuario clica no checkbox dessas acoes (estando desmarcadas),
+ * abre o modal de agendamento em vez de so marcar.
+ */
+function isSchedulingAction(acao: string): boolean {
+  return /agendar.*(call|presencial|entrevista|reuni|conversa)/i.test(acao);
+}
 
 interface Props {
   applicationId: string;
@@ -19,6 +29,7 @@ interface ChecklistRow {
 
 export default function CandidateActionsPanel({ applicationId, stageId, movedAt }: Props) {
   const queryClient = useQueryClient();
+  const [schedulingItemId, setSchedulingItemId] = useState<string | null>(null);
 
   const { data: stage } = useQuery({
     queryKey: ["stage-playbook", stageId],
@@ -111,19 +122,53 @@ export default function CandidateActionsPanel({ applicationId, stageId, movedAt 
           <p className="text-xs text-muted-foreground">Sem ações definidas para esta etapa.</p>
         )}
         <div className="space-y-1.5">
-          {checklist?.map((c) => (
-            <label key={c.id} className="flex items-start gap-2 rounded-md p-1.5 hover:bg-muted/50">
-              <Checkbox
-                checked={c.concluido}
-                onCheckedChange={(v) => toggle.mutate({ id: c.id, concluido: !!v })}
-                className="mt-0.5"
-              />
-              <span className={`text-sm ${c.concluido ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                {c.acao}
-              </span>
-            </label>
-          ))}
+          {checklist?.map((c) => {
+            const isScheduling = isSchedulingAction(c.acao);
+            return (
+              <div key={c.id} className="group flex items-start gap-2 rounded-md p-1.5 hover:bg-muted/50">
+                <Checkbox
+                  checked={c.concluido}
+                  onCheckedChange={(v) => {
+                    // Se for acao de agendar e estiver marcando agora, abre modal
+                    if (v && isScheduling && !c.concluido) {
+                      setSchedulingItemId(c.id);
+                    } else {
+                      toggle.mutate({ id: c.id, concluido: !!v });
+                    }
+                  }}
+                  className="mt-0.5"
+                />
+                <div className="flex flex-1 items-center gap-2">
+                  <span className={`flex-1 text-sm ${c.concluido ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                    {c.acao}
+                  </span>
+                  {isScheduling && !c.concluido && (
+                    <button
+                      type="button"
+                      onClick={() => setSchedulingItemId(c.id)}
+                      className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs text-primary hover:bg-primary/10 transition-colors"
+                      title="Agendar e gerar mensagem para WhatsApp"
+                    >
+                      <Calendar className="h-3 w-3" />
+                      Agendar
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {schedulingItemId && (
+          <ScheduleInterviewModal
+            open={!!schedulingItemId}
+            onOpenChange={(v) => {
+              if (!v) setSchedulingItemId(null);
+            }}
+            applicationId={applicationId}
+            checklistItemId={schedulingItemId}
+          />
+        )}
       </div>
 
       {stage.criterios_avanco && (
