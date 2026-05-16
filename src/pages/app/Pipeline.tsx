@@ -2,7 +2,8 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useRef } from "react";
-import { Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck, Scale, Info, AlertTriangle, Clock } from "lucide-react";
+import { Search, Plus, GripVertical, Mail, Phone, Calendar, ClipboardCheck, Scale, Info, AlertTriangle, Clock, FileDown } from "lucide-react";
+import { exportCandidateReport } from "@/lib/exportCandidateReport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -284,6 +285,19 @@ export default function Pipeline() {
         <div className="flex items-center gap-2">
           <Button onClick={() => setModalOpen(true)} className="gap-2">
             <Plus className="h-4 w-4" /> Adicionar candidato
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={async () => {
+              try {
+                await exportCandidateReport(id!, search);
+              } catch (err: any) {
+                toast.error(err.message || "Erro ao gerar relatório.");
+              }
+            }}
+          >
+            <FileDown className="h-4 w-4" /> Exportar relatório
           </Button>
           {selectedForCompare.length >= 2 && (
             <Button variant="outline" onClick={() => setCompareOpen(true)} className="gap-2">
