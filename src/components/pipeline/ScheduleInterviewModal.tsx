@@ -56,13 +56,18 @@ export default function ScheduleInterviewModal({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Carrega contexto: candidato + vaga
+  // Carrega contexto: candidato + vaga + empresa (via FK da vaga, mais confiavel
+  // que AuthContext que pode estar desatualizado em alguns casos).
   const { data: ctx } = useQuery({
     queryKey: ["schedule-context", applicationId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("applications")
-        .select("id, candidate_id, job_id, candidates(name, phone), jobs(title)")
+        .select(
+          "id, candidate_id, job_id, " +
+          "candidates(name, phone), " +
+          "jobs(title, companies(nome_fantasia, endereco))"
+        )
         .eq("id", applicationId)
         .single();
       if (error) throw error;
@@ -71,46 +76,53 @@ export default function ScheduleInterviewModal({
     enabled: !!applicationId && open,
   });
 
-  // Pré-preenche endereço da empresa
+  // Fontes preferenciais: dados frescos vindos da query; fallback para AuthContext.
+  const fetchedCompany = ctx?.jobs?.companies ?? null;
+  const companyName = fetchedCompany?.nome_fantasia ?? company?.nome_fantasia ?? "";
+  const companyAddress = fetchedCompany?.endereco ?? company?.endereco ?? "";
+
+  // Pré-preenche endereço e entrevistador quando os dados ficam disponíveis.
   useEffect(() => {
-    if (open && company?.endereco && !address) {
-      setAddress(company.endereco);
+    if (open && companyAddress && !address) {
+      setAddress(companyAddress);
     }
-    // Pré-preenche entrevistador com o usuário logado
     if (open && profile?.full_name && !interviewer) {
       setInterviewer(profile.full_name);
     }
-  }, [open, company, profile, address, interviewer]);
+  }, [open, companyAddress, profile, address, interviewer]);
 
   const candidateName = ctx?.candidates?.name ?? "candidato(a)";
   const candidatePhone = ctx?.candidates?.phone ?? "";
   const jobTitle = ctx?.jobs?.title ?? "a vaga";
-  const companyName = company?.nome_fantasia ?? "nossa empresa";
   const whatsappNumber = phoneToWhatsapp(candidatePhone);
 
   const message = useMemo(() => {
     if (!date || !time) return "";
     const dateFmt = formatDateBR(date);
+    const senderName = profile?.full_name || "";
+    // Fallback amigavel: se o nome da empresa ainda nao carregou, ao inves
+    // de aparecer "nossa empresa" usamos uma frase neutra.
+    const companyClause = companyName ? `da ${companyName}` : "do time de Recrutamento";
     const lines: string[] = [];
-    lines.push(`Olá, ${candidateName}! 😊`);
+    lines.push(`Olá, ${candidateName}!`);
     lines.push("");
-    lines.push(`Tudo bem? Aqui é ${profile?.full_name || "do RH"}, da ${companyName}.`);
+    lines.push(`Tudo bem? Aqui é ${senderName || "do RH"}, ${companyClause}.`);
     lines.push("");
-    lines.push(`Você foi selecionado(a) para a próxima etapa do nosso processo para a vaga de *${jobTitle}*. 🎉`);
+    lines.push(`Você foi selecionado(a) para a próxima etapa do nosso processo para a vaga de *${jobTitle}*.`);
     lines.push("");
     lines.push(`Sua entrevista está agendada:`);
     lines.push("");
-    lines.push(`📅 *Data:* ${dateFmt}`);
-    lines.push(`🕐 *Horário:* ${time}`);
+    lines.push(`*Data:* ${dateFmt}`);
+    lines.push(`*Horário:* ${time}`);
     if (modality === "presencial" && address) {
-      lines.push(`📍 *Local:* ${address}`);
+      lines.push(`*Local:* ${address}`);
     } else if (modality === "online" && link) {
-      lines.push(`💻 *Link:* ${link}`);
+      lines.push(`*Link:* ${link}`);
     }
     if (interviewer) {
-      lines.push(`👥 *Com:* ${interviewer}`);
+      lines.push(`*Com:* ${interviewer}`);
     }
-    lines.push(`⏱️ *Duração estimada:* ${duration} minutos`);
+    lines.push(`*Duração estimada:* ${duration} minutos`);
     lines.push("");
     if (modality === "online") {
       lines.push("Sugestão: teste seu microfone, câmera e conexão alguns minutos antes do horário.");
@@ -121,8 +133,8 @@ export default function ScheduleInterviewModal({
     lines.push("Qualquer dúvida estou à disposição.");
     lines.push("");
     lines.push("Atenciosamente,");
-    lines.push(`${profile?.full_name || ""}`);
-    lines.push(`${companyName}`);
+    if (senderName) lines.push(senderName);
+    if (companyName) lines.push(companyName);
     return lines.join("\n");
   }, [date, time, address, link, interviewer, duration, modality, candidateName, jobTitle, companyName, profile]);
 
