@@ -92,33 +92,42 @@ export type Database = {
       applications: {
         Row: {
           candidate_id: string | null
+          case_selected_at: string | null
           consent_accepted_at: string | null
           consent_version: string | null
           created_at: string
           id: string
           job_id: string
+          selected_case: string | null
+          selected_case_level: string | null
           stage_id: string
           status: string
           updated_at: string
         }
         Insert: {
           candidate_id?: string | null
+          case_selected_at?: string | null
           consent_accepted_at?: string | null
           consent_version?: string | null
           created_at?: string
           id?: string
           job_id: string
+          selected_case?: string | null
+          selected_case_level?: string | null
           stage_id: string
           status?: string
           updated_at?: string
         }
         Update: {
           candidate_id?: string | null
+          case_selected_at?: string | null
           consent_accepted_at?: string | null
           consent_version?: string | null
           created_at?: string
           id?: string
           job_id?: string
+          selected_case?: string | null
+          selected_case_level?: string | null
           stage_id?: string
           status?: string
           updated_at?: string
@@ -712,6 +721,7 @@ export type Database = {
       stages: {
         Row: {
           acoes: string | null
+          case_brief: string | null
           criterios_avanco: string | null
           id: string
           job_id: string
@@ -723,6 +733,7 @@ export type Database = {
         }
         Insert: {
           acoes?: string | null
+          case_brief?: string | null
           criterios_avanco?: string | null
           id?: string
           job_id: string
@@ -734,6 +745,7 @@ export type Database = {
         }
         Update: {
           acoes?: string | null
+          case_brief?: string | null
           criterios_avanco?: string | null
           id?: string
           job_id?: string
