@@ -18,8 +18,19 @@ import {
   RefreshCw,
   Bookmark,
   MessageSquare,
+  Brain,
+  Wrench,
+  Heart,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type CaseType = "comportamental" | "tecnico" | "cultural";
+
+const CASE_TYPES: { value: CaseType; label: string; icon: typeof Brain; description: string }[] = [
+  { value: "comportamental", label: "Comportamental", icon: Brain, description: "Avalia postura, decisão e comunicação em situações reais" },
+  { value: "tecnico", label: "Técnico", icon: Wrench, description: "Exercício prático com entregáveis técnicos da função" },
+  { value: "cultural", label: "Cultural", icon: Heart, description: "Avalia alinhamento com missão/valores da empresa" },
+];
 
 interface Props {
   applicationId: string;
@@ -75,9 +86,11 @@ export default function CaseSection({ applicationId, jobId, stageId }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<CaseSuggestion[] | null>(null);
+  const [generatedType, setGeneratedType] = useState<CaseType | null>(null);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [deadline, setDeadline] = useState("");
   const [copied, setCopied] = useState(false);
+  const [caseType, setCaseType] = useState<CaseType>("comportamental");
 
   // Dados da application + vaga + empresa + candidato
   const { data: ctx } = useQuery({
@@ -127,12 +140,13 @@ export default function CaseSection({ applicationId, jobId, stageId }: Props) {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-case-suggestions", {
-        body: { job_id: jobId },
+        body: { job_id: jobId, case_type: caseType },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data?.cases)) throw new Error("Resposta inválida da IA.");
       setSuggestions(data.cases);
+      setGeneratedType(caseType);
       setExpandedIdx(null);
     } catch (err: any) {
       toast.error(err.message || "Erro ao gerar cases.");
@@ -155,12 +169,13 @@ export default function CaseSection({ applicationId, jobId, stageId }: Props) {
       if (error) throw error;
 
       // Log no historico
+      const typeLabel = CASE_TYPES.find((t) => t.value === (generatedType ?? caseType))?.label ?? "Case";
       await supabase.from("activity_events").insert({
         type: "case_selected",
         entity_type: "application",
         entity_id: applicationId,
-        message: `Case "${caseObj.title}" (nível ${LEVEL_LABEL[caseObj.level] ?? caseObj.level}) selecionado para o candidato`,
-        metadata: { level: caseObj.level, title: caseObj.title },
+        message: `Case "${caseObj.title}" (${typeLabel}, nível ${LEVEL_LABEL[caseObj.level] ?? caseObj.level}) selecionado para o candidato`,
+        metadata: { level: caseObj.level, title: caseObj.title, case_type: generatedType ?? caseType },
       });
 
       queryClient.invalidateQueries({ queryKey: ["case-section-ctx", applicationId] });
@@ -369,24 +384,55 @@ export default function CaseSection({ applicationId, jobId, stageId }: Props) {
       </div>
 
       {stageDefaultCase && !suggestions && (
-        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-            <Bookmark className="h-3.5 w-3.5" />
-            Case padrão desta vaga
-          </div>
-          <pre className="whitespace-pre-wrap font-sans text-sm text-foreground max-h-40 overflow-y-auto">
-            {stageDefaultCase}
-          </pre>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={useStageDefault} className="gap-1.5">
+        <>
+          <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <Bookmark className="h-3.5 w-3.5" />
+              Case padrão desta vaga
+            </div>
+            <pre className="whitespace-pre-wrap font-sans text-sm text-foreground max-h-40 overflow-y-auto">
+              {stageDefaultCase}
+            </pre>
+            <Button size="sm" onClick={useStageDefault} className="gap-1.5 w-full sm:w-auto">
               <Check className="h-3.5 w-3.5" /> Usar este case para o candidato
             </Button>
-            <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="gap-1.5">
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-border">
+            <p className="text-xs text-muted-foreground">Ou gere outros cases com IA:</p>
+
+            {/* Seletor de tipo */}
+            <div className="grid grid-cols-3 gap-2">
+              {CASE_TYPES.map((t) => {
+                const Icon = t.icon;
+                const selected = caseType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setCaseType(t.value)}
+                    className={`flex flex-col items-center gap-1 rounded-md border p-2 text-xs transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/5 text-primary font-medium"
+                        : "border-border text-muted-foreground hover:bg-muted/50"
+                    }`}
+                    title={t.description}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button variant="outline" size="sm" onClick={generate} disabled={loading} className="w-full gap-1.5">
               <Sparkles className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-              {loading ? "Gerando..." : "Sugerir outros (IA)"}
+              {loading
+                ? "Gerando..."
+                : `Gerar cases ${CASE_TYPES.find((t) => t.value === caseType)?.label.toLowerCase()} com IA`}
             </Button>
           </div>
-        </div>
+        </>
       )}
 
       {!stageDefaultCase && !suggestions && (
@@ -395,20 +441,76 @@ export default function CaseSection({ applicationId, jobId, stageId }: Props) {
             <Lightbulb className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
             <p>Gere 3 cases sugeridos pela IA — um em cada nível (básico, intermediário, avançado) — e selecione qual enviar a este candidato.</p>
           </div>
+
+          {/* Seletor de tipo de case */}
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase font-semibold text-muted-foreground">
+              Tipo de case
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {CASE_TYPES.map((t) => {
+                const Icon = t.icon;
+                const selected = caseType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setCaseType(t.value)}
+                    className={`flex flex-col items-center gap-1 rounded-md border p-2 text-xs transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/5 text-primary font-medium"
+                        : "border-border text-muted-foreground hover:bg-muted/50"
+                    }`}
+                    title={t.description}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground italic px-1">
+              {CASE_TYPES.find((t) => t.value === caseType)?.description}
+            </p>
+          </div>
+
           <Button onClick={generate} disabled={loading} className="w-full gap-2">
             <Sparkles className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "Gerando com IA..." : "Sugerir cases com IA"}
+            {loading
+              ? "Gerando com IA..."
+              : `Sugerir cases ${CASE_TYPES.find((t) => t.value === caseType)?.label.toLowerCase()} com IA`}
           </Button>
         </>
       )}
 
       {suggestions && suggestions.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">{suggestions.length} sugestões geradas pela IA</p>
-            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={generate} disabled={loading}>
-              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} /> Regenerar
-            </Button>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">{suggestions.length} sugestões geradas pela IA</p>
+              {generatedType && (
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  {(() => {
+                    const t = CASE_TYPES.find((x) => x.value === generatedType);
+                    if (!t) return generatedType;
+                    const Icon = t.icon;
+                    return (
+                      <>
+                        <Icon className="h-2.5 w-2.5" /> {t.label}
+                      </>
+                    );
+                  })()}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setSuggestions(null)}>
+                ← Trocar tipo
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={generate} disabled={loading}>
+                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} /> Regenerar
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-2">
             {suggestions.map((c, idx) => {
