@@ -39,6 +39,7 @@ import { getCandidateFileSignedUrl } from "@/lib/candidateFiles";
 import FitScoreBadge from "./FitScoreBadge";
 import CandidateActionsPanel from "./CandidateActionsPanel";
 import SuggestedQuestions from "./SuggestedQuestions";
+import CaseSection from "./CaseSection";
 
 interface Stage {
   id: string;
@@ -472,6 +473,15 @@ export default function CandidateDrawer({
                   stageId={app.stage_id}
                   movedAt={app.updated_at || app.created_at}
                 />
+
+                {/* Case section: aparece quando a etapa atual eh "Case" (ou similar) */}
+                {(app as any)?.stages?.name && /case/i.test((app as any).stages.name) && (
+                  <CaseSection
+                    applicationId={app.id}
+                    jobId={jobId}
+                    stageId={app.stage_id}
+                  />
+                )}
 
                 <div className="rounded-lg border border-border bg-card p-3">
                   <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">

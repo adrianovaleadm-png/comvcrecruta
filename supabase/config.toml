@@ -21,6 +21,9 @@ verify_jwt = true
 [functions.generate-interview-questions]
 verify_jwt = true
 
+[functions.generate-case-suggestions]
+verify_jwt = true
+
 [functions.send-stage-notification]
 verify_jwt = true
 
