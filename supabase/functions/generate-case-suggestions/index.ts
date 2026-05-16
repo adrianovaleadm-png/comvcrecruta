@@ -46,7 +46,9 @@ serve(async (req) => {
 
     const jobAny = job as any;
 
-    const prompt = `Você é um especialista em recrutamento e seleção. Gere 3 propostas de Case prático para a etapa final de avaliação técnica de um candidato. Cada proposta deve estar em um nível de dificuldade diferente (básico, intermediário, avançado), apropriadas para a vaga abaixo.
+    const prompt = `Você é um especialista em recrutamento e seleção. Gere 3 propostas de **Case Comportamental** para a etapa final de avaliação de um candidato. Cada proposta em um nível de dificuldade diferente (básico, intermediário, avançado), apropriadas para a vaga abaixo.
+
+IMPORTANTE: são cases COMPORTAMENTAIS, NÃO técnicos. Avaliam como a pessoa age, decide, se comunica e se posiciona diante de situações reais do dia a dia. NÃO peça que o candidato faça cálculos, planilhas, código ou exercícios técnicos. Peça que ele DESCREVA como agiria, raciocinaria e se comunicaria.
 
 ## Vaga
 - Título: ${job.title}
@@ -57,46 +59,56 @@ serve(async (req) => {
 - Habilidades requeridas: ${jobAny.required_skills?.join(", ") || "não informadas"}
 - Descrição: ${(job.description || "").substring(0, 800)}
 
-## Definição dos níveis
-- **Básico** (~30-45 min): foco em atitude/atenção a detalhe, sem ferramentas complexas, baixa expertise técnica exigida. Adequado para candidato sem experiência prévia.
-- **Intermediário** (~1h-1h30): exige raciocínio estruturado + uma habilidade técnica específica da vaga. Adequado para candidato com 6m-1ano de experiência ou júnior entrante.
-- **Avançado** (~2h-3h): integra múltiplas habilidades, exige autonomia, pode envolver uso de ferramenta. Adequado para júnior experiente ou mid-level.
+## Definição dos níveis (cases comportamentais)
+
+- **Básico** (~20-30 min): Situação cotidiana, baixo risco. Decisão simples mas que exige postura adequada. Foco em atendimento, postura profissional e priorização básica. Adequado para candidato sem experiência prévia.
+
+- **Intermediário** (~30-45 min): Dilema com conflito interpessoal ou ético leve. Exige julgamento e comunicação difícil. Foco em comunicação assertiva, mediação, ética básica e responsabilidade. Adequado para candidato com 6m-1ano de experiência ou júnior entrante.
+
+- **Avançado** (~45-60 min): Conflito complexo com múltiplos stakeholders ou ambiguidade moral. Exige julgamento + comunicação com hierarquia + visão sistêmica. Foco em trade-offs, defesa de posição respeitosa, gestão de pressão. Adequado para júnior experiente ou mid-level.
 
 ## Estrutura do case (campo "description")
+
 Cada case deve ter o texto COMPLETO que será enviado ao candidato, no formato:
 
 \`\`\`
-DESAFIO: [título do case]
+SITUAÇÃO: [título curto do cenário]
 
-Cenário
-[contexto realista, 2-4 linhas situando o candidato no problema]
+Contexto
+[2-4 linhas situando o cenário e o papel do candidato neste cenário]
 
-O que você deve entregar
-1. [primeiro item esperado, claro]
-2. [segundo item]
-3. [terceiro item — pode ser síntese, e-mail, recomendação]
+A situação
+[Descrição detalhada da situação/dilema, escrita em segunda pessoa direta ao candidato. 5-10 linhas com contexto suficiente para uma resposta refletida.]
+
+O que você deve responder
+1. Como você lidaria com essa situação? Descreva o passo a passo.
+2. Qual o raciocínio por trás de cada decisão?
+3. Que cuidados/precauções tomaria? Com quem você consultaria, se for o caso?
 
 Como entregar
-- [formato esperado: documento, planilha, etc.]
+- Resposta escrita (Word, Google Docs ou no próprio corpo do e-mail/mensagem)
 - Prazo: [recrutador define ao enviar]
-- Enviar como resposta a esta mensagem
+- Tamanho sugerido: 1-2 páginas
 
 O que estamos avaliando
-- [dimensão 1]
-- [dimensão 2]
-- [dimensão 3]
-- [dimensão 4 opcional]
+- Postura profissional
+- Clareza de comunicação
+- Tomada de decisão sob ambiguidade
+- [dimensão específica do nível: ética / mediação / etc.]
 
 Tempo esperado
-Cerca de [X] de dedicação. Não é prova de velocidade — é avaliação de qualidade e raciocínio.
+Cerca de [X] de reflexão e escrita. Não é prova de velocidade — é avaliação de raciocínio, postura e capacidade de articulação.
 \`\`\`
 
 ## Instruções
 
-- Cases REALISTAS, ligados à rotina da função (não acadêmicos).
-- Linguagem em pt-BR, tom profissional mas humano.
-- Adapte ao contexto da vaga (área, ferramentas mencionadas, senioridade).
-- Os 3 níveis devem ser PROGRESSIVOS — o avançado se baseia/extende habilidades do básico.
+- Cases REALISTAS e contextualizados na área/função da vaga (NÃO genéricos).
+- Para DP/RH: situações típicas envolvendo colaboradores, gestores, conflitos no trabalho, ética profissional, comunicação difícil.
+- Para Vendas: situações com clientes, metas, conflito interno.
+- Para Tech: situações com equipe técnica, prazo apertado, débito técnico, código alheio.
+- Linguagem em pt-BR, tom profissional mas humano. Trate o candidato em segunda pessoa direta.
+- NÃO peça exercícios técnicos (planilhas, cálculos, código). Peça reflexão escrita.
+- Os 3 níveis devem ser PROGRESSIVOS — o avançado tem mais nuances/stakeholders/ambiguidade.
 
 Retorne APENAS um JSON válido (sem markdown), no formato:
 
@@ -138,7 +150,7 @@ Retorne APENAS um JSON válido (sem markdown), no formato:
           {
             role: "system",
             content:
-              "Você é um especialista em recrutamento. Gere cases praticos realistas em pt-BR. Retorne apenas JSON válido sem markdown.",
+              "Você é um especialista em recrutamento e seleção. Gere cases COMPORTAMENTAIS (situações que avaliam postura, decisão, comunicação) — nunca técnicos. Retorne apenas JSON válido sem markdown.",
           },
           { role: "user", content: prompt },
         ],
