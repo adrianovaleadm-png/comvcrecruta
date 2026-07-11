@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Upload, X } from "lucide-react";
+import { onboardingSchema, zodErrorsToFieldMap } from "@/lib/validation/authForms";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function Onboarding() {
   const [logoPreview, setLogoPreview] = useState<string | null>(company?.logo_url || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,6 +31,17 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     if (!company) return;
+
+    // Valida via Zod. Campos opcionais so sao checados de formato quando preenchidos.
+    const result = onboardingSchema.safeParse({ descricao, endereco, telefone });
+    const errMap = zodErrorsToFieldMap(result);
+    if (errMap) {
+      setFieldErrors(errMap);
+      setError("");
+      return;
+    }
+    setFieldErrors({});
+
     setLoading(true);
     setError("");
 
@@ -71,8 +84,14 @@ export default function Onboarding() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2.5 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm";
+  const inputBaseClass = "w-full px-3 py-2.5 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm";
+  const inputClassFor = (field: string) =>
+    `${inputBaseClass} ${fieldErrors[field] ? "border-destructive" : "border-input"}`;
   const labelClass = "block text-sm font-medium text-foreground mb-1";
+  const FieldError = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="text-xs text-destructive mt-1">{fieldErrors[field]}</p>
+    ) : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -113,17 +132,20 @@ export default function Onboarding() {
 
           <div>
             <label className={labelClass}>Descrição da Empresa</label>
-            <textarea className={inputClass + " min-h-[100px] resize-none"} value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Conte um pouco sobre a empresa..." />
+            <textarea className={inputClassFor("descricao") + " min-h-[100px] resize-none"} value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Conte um pouco sobre a empresa..." />
+            <FieldError field="descricao" />
           </div>
 
           <div>
             <label className={labelClass}>Endereço</label>
-            <input className={inputClass} value={endereco} onChange={e => setEndereco(e.target.value)} placeholder="Rua, número, cidade, estado" />
+            <input className={inputClassFor("endereco")} value={endereco} onChange={e => setEndereco(e.target.value)} placeholder="Rua, número, cidade, estado" />
+            <FieldError field="endereco" />
           </div>
 
           <div>
             <label className={labelClass}>Telefone Comercial</label>
-            <input className={inputClass} value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+            <input className={inputClassFor("telefone")} value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+            <FieldError field="telefone" />
           </div>
 
           <button onClick={handleSubmit} disabled={loading} className="w-full py-2.5 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90 transition flex items-center justify-center gap-2 disabled:opacity-50">
