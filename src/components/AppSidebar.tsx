@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Briefcase, MessageSquare, Building2,
-  Users, BarChart3, FileText, Globe, Award, LogOut, Menu, X, UserSearch, Heart, Sparkles
+  LayoutDashboard, Briefcase,
+  BarChart3, LogOut, Menu, X, UserSearch, Heart, Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,12 @@ interface NavSection {
   items: NavItem[];
 }
 
+// Menu enxuto: apenas telas com implementação real são exibidas.
+// Placeholders (Mensagens, Vagas Internas, Indicações, Equipe,
+// Requisições, Templates, Página de Carreiras admin) foram retirados
+// do menu enquanto não são implementados. As rotas continuam ativas
+// em App.tsx caso alguém tenha bookmark antigo, mas não aparecem
+// mais aqui para não passar a impressão de sistema inacabado.
 const sections: NavSection[] = [
   {
     title: "RECRUTAMENTO",
@@ -24,19 +30,6 @@ const sections: NavSection[] = [
       { label: "Painel", icon: LayoutDashboard, path: "/app" },
       { label: "Hub de Vagas", icon: Briefcase, path: "/app/vagas" },
       { label: "Banco de Talentos", icon: UserSearch, path: "/app/talentos" },
-    ],
-  },
-  {
-    title: "COMUNICAÇÃO",
-    items: [
-      { label: "Mensagens", icon: MessageSquare, path: "/app/mensagens" },
-    ],
-  },
-  {
-    title: "PROGRAMAS",
-    items: [
-      { label: "Vagas Internas", icon: Building2, path: "/app/vagas-internas" },
-      { label: "Indicações", icon: Award, path: "/app/indicacoes" },
     ],
   },
   {
@@ -49,10 +42,6 @@ const sections: NavSection[] = [
     title: "ADMINISTRADOR",
     items: [
       { label: "Empresa", icon: Heart, path: "/app/empresa" },
-      { label: "Equipe", icon: Users, path: "/app/equipe" },
-      { label: "Requisições", icon: FileText, path: "/app/requisicoes" },
-      { label: "Templates", icon: FileText, path: "/app/templates" },
-      { label: "Página de Carreiras", icon: Globe, path: "/app/carreiras" },
     ],
   },
 ];
