@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Briefcase, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { getPublicJobUrl } from "@/lib/publicUrl";
+import QueryErrorState from "@/components/ui/QueryErrorState";
 
 const statusColors: Record<string, string> = {
   open: "bg-success/10 text-success border-success/30",
@@ -29,7 +30,7 @@ export default function JobsList() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const companyId = useCurrentCompanyId();
 
-  const { data: jobs, isLoading } = useQuery({
+  const { data: jobs, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["jobs", search, statusFilter, companyId],
     queryFn: async () => {
       if (!companyId) return [];
@@ -93,6 +94,13 @@ export default function JobsList() {
 
       {isLoading ? (
         <div className="py-12 text-center text-muted-foreground">Carregando...</div>
+      ) : isError ? (
+        <QueryErrorState
+          title="Não conseguimos carregar as vagas"
+          description="Houve um problema ao buscar a lista. Tente recarregar."
+          error={error}
+          onRetry={refetch}
+        />
       ) : !jobs?.length ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Briefcase className="mb-4 h-12 w-12 text-muted-foreground/50" />

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import NewCandidateModal from "@/components/talents/NewCandidateModal";
+import QueryErrorState from "@/components/ui/QueryErrorState";
 
 export default function TalentList() {
   const [search, setSearch] = useState("");
@@ -23,7 +24,7 @@ export default function TalentList() {
     debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
   }, []);
 
-  const { data: candidates, isLoading } = useQuery({
+  const { data: candidates, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["talents", debouncedSearch, tagFilter, companyId],
     queryFn: async () => {
       if (!companyId) return [];
@@ -116,8 +117,18 @@ export default function TalentList() {
         </div>
       )}
 
+      {/* Error */}
+      {!isLoading && isError && (
+        <QueryErrorState
+          title="Não conseguimos carregar os candidatos"
+          description="Houve um problema ao buscar o banco de talentos. Tente recarregar."
+          error={error}
+          onRetry={refetch}
+        />
+      )}
+
       {/* Empty */}
-      {!isLoading && (!candidates || candidates.length === 0) && (
+      {!isLoading && !isError && (!candidates || candidates.length === 0) && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card py-16">
           <p className="mb-2 text-lg font-medium text-foreground">Nenhum candidato encontrado</p>
           <p className="mb-4 text-sm text-muted-foreground">Comece adicionando candidatos ao banco de talentos.</p>
@@ -128,7 +139,7 @@ export default function TalentList() {
       )}
 
       {/* Table */}
-      {!isLoading && candidates && candidates.length > 0 && (
+      {!isLoading && !isError && candidates && candidates.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
